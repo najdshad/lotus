@@ -27,6 +27,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ShapeDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -59,7 +61,6 @@ import com.dn0ne.player.app.domain.track.Track
 import com.dn0ne.player.app.domain.track.filterTracks
 import com.dn0ne.player.app.presentation.ScrollToTopAndLocateButtons
 import com.dn0ne.player.app.presentation.components.topbar.LazyColumnWithCollapsibleTopBar
-import com.dn0ne.player.app.presentation.components.trackinfo.SearchField
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
@@ -198,16 +199,29 @@ fun Queue(
                                 val focusRequester = remember {
                                     FocusRequester()
                                 }
-                                SearchField(
+                                TextField(
                                     value = searchFieldValue,
                                     onValueChange = {
                                         searchFieldValue = it.trimStart()
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Search,
+                                            contentDescription = null
+                                        )
                                     },
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(horizontal = 48.dp)
                                         .align(Alignment.Center)
-                                        .focusRequester(focusRequester)
+                                        .focusRequester(focusRequester),
+                                    singleLine = true,
+                                    colors = TextFieldDefaults.colors(
+                                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                        unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                                    )
                                 )
 
                                 LaunchedEffect(Unit) {

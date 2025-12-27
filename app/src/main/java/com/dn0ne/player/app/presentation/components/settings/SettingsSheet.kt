@@ -47,7 +47,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.dn0ne.player.R
 import com.dn0ne.player.app.presentation.components.topbar.ColumnWithCollapsibleTopBar
-import com.kmpalette.DominantColorState
 import kotlinx.serialization.Serializable
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,7 +57,6 @@ fun SettingsSheet(
     onPlaylistPick: () -> Unit,
     onScanFoldersClick: () -> Unit,
     onCloseClick: () -> Unit,
-    dominantColorState: DominantColorState<ImageBitmap>?,
     modifier: Modifier = Modifier
 ) {
     AnimatedVisibility(
@@ -241,7 +239,6 @@ fun SettingsSheet(
                         onBackClick = {
                             navController.navigateUp()
                         },
-                        dominantColorState = dominantColorState,
                         modifier = Modifier.fillMaxSize()
                     )
                 }

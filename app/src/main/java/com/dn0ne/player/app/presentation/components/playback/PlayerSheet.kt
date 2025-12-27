@@ -49,7 +49,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.ExpandMore
-import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Repeat
@@ -101,7 +100,6 @@ import kotlin.math.absoluteValue
 fun PlayerSheet(
     playbackStateFlow: StateFlow<PlaybackState>,
     onPlayerExpandedChange: (Boolean) -> Unit,
-    onLyricsSheetExpandedChange: (Boolean) -> Unit,
     onPlayClick: () -> Unit,
     onPauseClick: () -> Unit,
     onSeekToNextClick: () -> Unit,
@@ -109,14 +107,12 @@ fun PlayerSheet(
     onSeekTo: (Long) -> Unit,
     onReset: () -> Unit,
     onPlaybackModeClick: () -> Unit,
-    onCoverArtLoaded: (ImageBitmap?) -> Unit,
     onPlayNextClick: () -> Unit,
     onAddToQueueClick: () -> Unit,
     onAddToPlaylistClick: () -> Unit,
     onViewTrackInfoClick: () -> Unit,
     onGoToAlbumClick: () -> Unit,
     onGoToArtistClick: () -> Unit,
-    onLyricsClick: () -> Unit,
     onRemoveFromQueueClick: (Int) -> Unit,
     onReorderingQueue: (Int, Int) -> Unit,
     onTrackClick: (Track, Playlist) -> Unit,
@@ -235,20 +231,11 @@ fun PlayerSheet(
                     },
                     onPlayClick = onPlayClick,
                     onPauseClick = onPauseClick,
-                    onSeekToNextClick = onSeekToNextClick,
-                    onCoverArtLoaded = onCoverArtLoaded
+                    onSeekToNextClick = onSeekToNextClick
                 )
             }
 
             true -> {
-                val appearance by settings.appearance.collectAsState()
-                val amoledDarkTheme by settings.amoledDarkTheme.collectAsState()
-                val isDarkTheme = when (appearance) {
-                    Theme.Appearance.System -> isSystemInDarkTheme()
-                    Theme.Appearance.Light -> false
-                    Theme.Appearance.Dark -> true
-                }
-
                 ExpandedPlayer(
                     playbackStateFlow = playbackStateFlow,
                     onSeekTo = onSeekTo,
@@ -264,42 +251,12 @@ fun PlayerSheet(
                         )
                     },
                     onPlaybackModeClick = onPlaybackModeClick,
-                    onCoverArtLoaded = onCoverArtLoaded,
                     onPlayNextClick = onPlayNextClick,
                     onAddToQueueClick = onAddToQueueClick,
                     onAddToPlaylistClick = onAddToPlaylistClick,
                     onViewTrackInfoClick = onViewTrackInfoClick,
                     onGoToAlbumClick = onGoToAlbumClick,
                     onGoToArtistClick = onGoToArtistClick,
-                    onLyricsSheetExpandedChange = onLyricsSheetExpandedChange,
-                    onLyricsClick = onLyricsClick,
-                    lyricsTextStyle = MaterialTheme.typography.headlineMedium
-                        .copy(
-                            fontSize = settings.lyricsFontSize,
-                            lineHeight = settings.lyricsLineHeight,
-                            letterSpacing = settings.lyricsLetterSpacing,
-                            textAlign = settings.lyricsAlignment,
-                            fontWeight = FontWeight(settings.lyricsFontWeight),
-                        ),
-                    lyricsContainerColor = when {
-                        settings.useDarkPaletteOnLyricsSheet && !isDarkTheme -> {
-                            MaterialTheme.colorScheme.primary
-                        }
-
-                        else -> {
-                            if (!amoledDarkTheme) {
-                                MaterialTheme.colorScheme.inversePrimary
-                            } else {
-                                MaterialTheme.colorScheme.background
-                            }
-                        }
-                    },
-                    lyricsContentColor = when {
-                        settings.useDarkPaletteOnLyricsSheet && !isDarkTheme -> {
-                            MaterialTheme.colorScheme.surface
-                        }
-                        else -> MaterialTheme.colorScheme.inverseSurface
-                    },
                     onRemoveFromQueueClick = onRemoveFromQueueClick,
                     onReorderingQueue = onReorderingQueue,
                     onTrackClick = onTrackClick,
@@ -321,7 +278,6 @@ fun BottomPlayer(
     onPlayClick: () -> Unit,
     onPauseClick: () -> Unit,
     onSeekToNextClick: () -> Unit,
-    onCoverArtLoaded: (ImageBitmap?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -388,7 +344,6 @@ fun BottomPlayer(
                 ) {
                     CoverArt(
                         uri = currentTrack.coverArtUri,
-                        onCoverArtLoaded = onCoverArtLoaded,
                         modifier = Modifier
                             .size(48.dp)
                             .clip(ShapeDefaults.Small)
@@ -476,18 +431,12 @@ fun ExpandedPlayer(
     onSeekTo: (Long) -> Unit,
     onHideClick: () -> Unit,
     onPlaybackModeClick: () -> Unit,
-    onCoverArtLoaded: (ImageBitmap?) -> Unit,
     onPlayNextClick: () -> Unit,
     onAddToQueueClick: () -> Unit,
     onAddToPlaylistClick: () -> Unit,
     onViewTrackInfoClick: () -> Unit,
     onGoToAlbumClick: () -> Unit,
     onGoToArtistClick: () -> Unit,
-    onLyricsSheetExpandedChange: (Boolean) -> Unit,
-    onLyricsClick: () -> Unit,
-    lyricsTextStyle: TextStyle,
-    lyricsContainerColor: Color,
-    lyricsContentColor: Color,
     onRemoveFromQueueClick: (Int) -> Unit,
     onReorderingQueue: (Int, Int) -> Unit,
     onTrackClick: (Track, Playlist) -> Unit,
@@ -498,11 +447,6 @@ fun ExpandedPlayer(
     }
 
     val playbackState by playbackStateFlow.collectAsState()
-    val showLyricsSheet by remember {
-        derivedStateOf {
-            playbackState.isLyricsSheetExpanded
-        }
-    }
     var showQueue by remember {
         mutableStateOf(false)
     }
@@ -598,7 +542,6 @@ fun ExpandedPlayer(
                     ) { track ->
                         CoverArt(
                             uri = track.coverArtUri,
-                            onCoverArtLoaded = onCoverArtLoaded,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(ShapeDefaults.Large)
@@ -672,7 +615,6 @@ fun ExpandedPlayer(
                     ) { track ->
                         CoverArt(
                             uri = track.coverArtUri,
-                            onCoverArtLoaded = onCoverArtLoaded,
                             modifier = Modifier
                                 .weight(1f)
                                 .padding(start = 28.dp)
@@ -800,27 +742,6 @@ fun ExpandedPlayer(
                     }
                 }
             }
-        }
-
-        AnimatedVisibility(
-            visible = showLyricsSheet,
-            enter = fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMedium)) + slideInVertically(
-                initialOffsetY = { it / 10 }),
-            exit = fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMedium)) + slideOutVertically(
-                targetOffsetY = { it / 10 }),
-            modifier = Modifier.align(Alignment.BottomCenter)
-        ) {
-            LyricsSheet(
-                playbackStateFlow = playbackStateFlow,
-                lyricsTextStyle = lyricsTextStyle,
-                onBackClick = {
-                    onLyricsSheetExpandedChange(false)
-                },
-                containerColor = lyricsContainerColor,
-                contentColor = lyricsContentColor,
-                onSeekTo = onSeekTo,
-                modifier = Modifier.fillMaxSize()
-            )
         }
 
         AnimatedVisibility(

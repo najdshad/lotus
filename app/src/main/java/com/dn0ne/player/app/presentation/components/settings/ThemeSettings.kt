@@ -52,7 +52,6 @@ import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.util.fastForEach
 import com.dn0ne.player.R
 import com.dn0ne.player.app.presentation.components.settings.Theme.Appearance
-import com.dn0ne.player.app.presentation.components.settings.Theme.PaletteStyle
 import com.dn0ne.player.app.presentation.components.topbar.ColumnWithCollapsibleTopBar
 import com.dn0ne.player.core.data.Settings
 
@@ -60,7 +59,6 @@ import com.dn0ne.player.core.data.Settings
 fun ThemeSettings(
     settings: Settings,
     onBackClick: () -> Unit,
-    dominantColorState: DominantColorState<ImageBitmap>? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current

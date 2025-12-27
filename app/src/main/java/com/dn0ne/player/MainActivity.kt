@@ -226,13 +226,6 @@ class MainActivity : ComponentActivity() {
                             ) {
                                 PlayerScreen(
                                     viewModel = viewModel,
-                                    onCoverArtPick = {
-                                        pickCoverArt.launch(
-                                            PickVisualMediaRequest(
-                                                ActivityResultContracts.PickVisualMedia.ImageOnly
-                                            )
-                                        )
-                                    },
                                     onFolderPick = { shouldScan ->
                                         shouldScanPickedFolder = shouldScan
                                         pickFolder.launch(null)
@@ -245,9 +238,6 @@ class MainActivity : ComponentActivity() {
                             }
 
                             val coroutineScope = rememberCoroutineScope()
-                            ObserveAsEvents(pickedCoverArtChannel.receiveAsFlow()) { bytes ->
-                                viewModel.setPickedCoverArtBytes(bytes)
-                            }
 
                             ObserveAsEvents(pickedFolderChannel.receiveAsFlow()) { path ->
                                 if (shouldScanPickedFolder) {

@@ -52,6 +52,8 @@ import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RippleConfiguration
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -106,10 +108,7 @@ import com.dn0ne.player.app.presentation.components.topbar.LazyGridWithCollapsib
 import com.dn0ne.player.app.presentation.components.topbar.Tab
 import com.dn0ne.player.app.presentation.components.topbar.TopBarContent
 import com.dn0ne.player.app.presentation.components.trackList
-import com.dn0ne.player.app.presentation.components.trackinfo.SearchField
 import com.dn0ne.player.app.presentation.components.trackinfo.TrackInfoSheet
-import com.materialkolor.DynamicMaterialTheme
-import com.materialkolor.PaletteStyle
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
@@ -124,33 +123,22 @@ fun PlayerScreen(
     val useDynamicColor by viewModel.settings.useDynamicColor.collectAsState()
     val appearance by viewModel.settings.appearance.collectAsState()
     val amoledDarkTheme by viewModel.settings.amoledDarkTheme.collectAsState()
-    DynamicMaterialTheme(
-        useDarkTheme = when (appearance) {
-            Theme.Appearance.System -> isSystemInDarkTheme()
-            Theme.Appearance.Light -> false
-            Theme.Appearance.Dark -> true
-        },
-        withAmoled = amoledDarkTheme,
-        animationSpec = tween(300, 200),
-        animate = true
+    val rippleColor = MaterialTheme.colorScheme.primaryContainer
+    val ripple = remember(rippleColor) {
+        ripple(color = rippleColor)
+    }
+    val rippleConfiguration = remember(rippleColor) {
+        RippleConfiguration(color = rippleColor)
+    }
+    CompositionLocalProvider(
+        LocalIndication provides ripple,
+        LocalRippleConfiguration provides rippleConfiguration,
+        LocalContentColor provides MaterialTheme.colorScheme.onSurface
     ) {
-        val rippleColor = MaterialTheme.colorScheme.primaryContainer
-        val ripple = remember(rippleColor) {
-            ripple(color = rippleColor)
-        }
-        val rippleConfiguration = remember(rippleColor) {
-            RippleConfiguration(color = rippleColor)
-        }
-        CompositionLocalProvider(
-            LocalIndication provides ripple,
-            LocalRippleConfiguration provides rippleConfiguration,
-            LocalContentColor provides MaterialTheme.colorScheme.onSurface
+        Box(
+            modifier = modifier
+                .background(color = MaterialTheme.colorScheme.background)
         ) {
-
-            Box(
-                modifier = modifier
-                    .background(color = MaterialTheme.colorScheme.background)
-            ) {
                 val context = LocalContext.current
                 val playbackState by viewModel.playbackState.collectAsState()
                 val currentTrack by remember {
@@ -270,7 +258,7 @@ fun PlayerScreen(
                         MainPlayerScreen(
                             gridState = gridState,
                             topBarTabs = tabs,
-                            defaultTab = viewModel.settings.defaultTab,
+                            defaultTab = Tab.Albums,
                             onTabChange = {
                                 selectedTab = it
                             },
@@ -707,7 +695,6 @@ fun PlayerScreen(
                                     navController.popBackStack(PlayerRoutes.Main, false)
                                     navController.navigate(PlayerRoutes.Playlist)
                                 },
-                                settings = viewModel.settings,
                                 onRemoveFromQueueClick = {
                                     viewModel.onEvent(PlayerScreenEvent.OnRemoveFromQueueClick(it))
                                 },
@@ -722,6 +709,7 @@ fun PlayerScreen(
                                         )
                                     )
                                 },
+                                settings = viewModel.settings,
                                 modifier = Modifier
                                     .align(alignment = Alignment.CenterHorizontally)
                                     .fillMaxWidth()
@@ -775,10 +763,8 @@ fun PlayerScreen(
                     onCloseClick = {
                         viewModel.onEvent(PlayerScreenEvent.OnCloseSettingsClick)
                     },
-                    dominantColorState = null,
                     modifier = Modifier.fillMaxSize()
                 )
-            }
         }
     }
 }
@@ -950,23 +936,43 @@ fun MainPlayerScreen(
                             val focusRequester = remember {
                                 FocusRequester()
                             }
-                            SearchField(
-                                value = searchFieldValue,
-                                onValueChange = {
-                                    searchFieldValue = it.trimStart()
-                                },
-                                icon = if (replaceSearchWithFilter && tab == Tab.Tracks) {
-                                    Icons.Rounded.FilterList
-                                } else Icons.Rounded.Search,
-                                placeholder = if (replaceSearchWithFilter && tab == Tab.Tracks) {
-                                    context.resources.getString(R.string.filter)
-                                } else context.resources.getString(R.string.search),
+                            Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 48.dp)
                                     .align(Alignment.Center)
                                     .focusRequester(focusRequester)
-                            )
+                            ) {
+                                TextField(
+                                    value = searchFieldValue,
+                                    onValueChange = {
+                                        searchFieldValue = it.trimStart()
+                                    },
+                                    placeholder = {
+                                        Text(
+                                            if (replaceSearchWithFilter && tab == Tab.Tracks) {
+                                                context.resources.getString(R.string.filter)
+                                            } else context.resources.getString(R.string.search)
+                                        )
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = if (replaceSearchWithFilter && tab == Tab.Tracks) {
+                                                Icons.Rounded.FilterList
+                                            } else Icons.Rounded.Search,
+                                            contentDescription = null
+                                        )
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true,
+                                    colors = TextFieldDefaults.colors(
+                                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                        unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                                    )
+                                )
+                            }
 
                             LaunchedEffect(Unit) {
                                 focusRequester.requestFocus()

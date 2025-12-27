@@ -15,13 +15,9 @@ navigationCompose = "2.8.5"
 kotlinxSerializationPlugin = "2.0.21"
 kotlinxSerializationJson = "1.7.3"
 coil = "3.0.1"
-kmpalette = "3.1.0"
-materialKolor = "2.0.0"
-ktor = "3.0.1"
 realm = "2.3.0"
 reorderable = "2.4.2"
 splashScreen = "1.0.1"
-jaudiotagger = "3.0.1"
 scrollbars = "2.2.0"
 
 [libraries]
@@ -49,15 +45,8 @@ koin-androidx-compose = { group = "io.insert-koin", name = "koin-androidx-compos
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 coil = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
-materialkolor = { group = "com.materialkolor", name = "material-kolor", version.ref = "materialKolor" }
-kmpalette-core = { module = "com.kmpalette:kmpalette-core", version.ref = "kmpalette" }
-ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
-ktor-client-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktor" }
-ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
-ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
 realm-library-base = { group = "io.realm.kotlin", name = "library-base", version.ref = "realm" }
 reorderable = { group = "sh.calvin.reorderable", name = "reorderable", version.ref = "reorderable" }
-jaudiotagger = { group = "net.jthink", name = "jaudiotagger", version.ref = "jaudiotagger" }
 scrollbars = { group = "com.github.nanihadesuka", name = "LazyColumnScrollbar", version.ref = "scrollbars" }
 
 [plugins]

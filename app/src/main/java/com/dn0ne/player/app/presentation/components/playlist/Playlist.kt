@@ -24,6 +24,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -54,7 +56,6 @@ import com.dn0ne.player.app.presentation.components.selection.selectionList
 import com.dn0ne.player.app.presentation.components.topbar.LazyColumnWithCollapsibleTopBar
 import com.dn0ne.player.app.presentation.components.topbar.TopBarContent
 import com.dn0ne.player.app.presentation.components.trackList
-import com.dn0ne.player.app.presentation.components.trackinfo.SearchField
 
 @Composable
 fun Playlist(
@@ -197,22 +198,38 @@ fun Playlist(
                             val focusRequester = remember {
                                 FocusRequester()
                             }
-                            SearchField(
+                            TextField(
                                 value = searchFieldValue,
                                 onValueChange = {
                                     searchFieldValue = it.trimStart()
                                 },
-                                icon = if (replaceSearchWithFilter) {
-                                    Icons.Rounded.FilterList
-                                } else Icons.Rounded.Search,
-                                placeholder = if (replaceSearchWithFilter) {
-                                    context.resources.getString(R.string.filter)
-                                } else context.resources.getString(R.string.search),
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = if (replaceSearchWithFilter) {
+                                            Icons.Rounded.FilterList
+                                        } else Icons.Rounded.Search,
+                                        contentDescription = null
+                                    )
+                                },
+                                placeholder = {
+                                    Text(
+                                        if (replaceSearchWithFilter) {
+                                            context.resources.getString(R.string.filter)
+                                        } else context.resources.getString(R.string.search)
+                                    )
+                                },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 48.dp)
                                     .align(Alignment.Center)
-                                    .focusRequester(focusRequester)
+                                    .focusRequester(focusRequester),
+                                singleLine = true,
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                                )
                             )
 
                             LaunchedEffect(Unit) {
