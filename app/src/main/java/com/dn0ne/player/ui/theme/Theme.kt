@@ -89,6 +89,7 @@ private val darkScheme = darkColorScheme(
 @Composable
 fun MusicPlayerTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    amoled: Boolean = false,
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
@@ -99,6 +100,7 @@ fun MusicPlayerTheme(
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
 
+        darkTheme && amoled -> amoledDarkScheme
         darkTheme -> darkScheme
         else -> lightScheme
     }

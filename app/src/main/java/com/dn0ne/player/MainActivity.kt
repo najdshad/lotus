@@ -135,8 +135,7 @@ class MainActivity : ComponentActivity() {
         } else Routes.Setup
 
         setContent {
-            MusicPlayerTheme {
-                ScaffoldWithSnackbarEvents(modifier = Modifier.fillMaxSize()) {
+            ScaffoldWithSnackbarEvents(modifier = Modifier.fillMaxSize()) {
 
                     val navController = rememberNavController()
                     NavHost(
@@ -206,6 +205,7 @@ class MainActivity : ComponentActivity() {
                             )
 
                             val appearance by viewModel.settings.appearance.collectAsState()
+                            val amoledDarkTheme by viewModel.settings.amoledDarkTheme.collectAsState()
                             val isDarkTheme = when (appearance) {
                                 Theme.Appearance.System -> isSystemInDarkTheme()
                                 Theme.Appearance.Light -> false
@@ -222,6 +222,8 @@ class MainActivity : ComponentActivity() {
 
                             val useDynamicColor by viewModel.settings.useDynamicColor.collectAsState()
                             MusicPlayerTheme(
+                                darkTheme = isDarkTheme,
+                                amoled = amoledDarkTheme,
                                 dynamicColor = useDynamicColor
                             ) {
                                 PlayerScreen(
@@ -281,7 +283,6 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
-            }
         }
     }
 
