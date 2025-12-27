@@ -1,20 +1,13 @@
 package com.dn0ne.player.app.di
 
 import com.dn0ne.player.EqualizerController
-import com.dn0ne.player.app.data.LyricsReader
-import com.dn0ne.player.app.data.LyricsReaderImpl
 import com.dn0ne.player.app.data.MetadataWriter
 import com.dn0ne.player.app.data.MetadataWriterImpl
 import com.dn0ne.player.app.data.SavedPlayerState
-import com.dn0ne.player.app.data.remote.lyrics.LrclibLyricsProvider
-import com.dn0ne.player.app.data.remote.lyrics.LyricsProvider
 import com.dn0ne.player.app.data.remote.metadata.MetadataProvider
 import com.dn0ne.player.app.data.remote.metadata.MusicBrainzMetadataProvider
-import com.dn0ne.player.app.data.repository.LyricsJson
-import com.dn0ne.player.app.data.repository.LyricsRepository
 import com.dn0ne.player.app.data.repository.PlaylistJson
 import com.dn0ne.player.app.data.repository.PlaylistRepository
-import com.dn0ne.player.app.data.repository.RealmLyricsRepository
 import com.dn0ne.player.app.data.repository.RealmPlaylistRepository
 import com.dn0ne.player.app.data.repository.TrackRepository
 import com.dn0ne.player.app.data.repository.TrackRepositoryImpl
@@ -72,25 +65,12 @@ val playerModule = module {
         MetadataWriterImpl(context = androidContext())
     }
 
-    single<LyricsProvider> {
-        LrclibLyricsProvider(
-            context = androidContext(),
-            client = get()
-        )
-    }
-
     single<Realm> {
         val configuration = RealmConfiguration.create(
-            schema = setOf(LyricsJson::class, PlaylistJson::class)
+            schema = setOf(PlaylistJson::class)
         )
 
         Realm.open(configuration)
-    }
-
-    single<LyricsRepository> {
-        RealmLyricsRepository(
-            realm = get()
-        )
     }
 
     single<PlaylistRepository> {
@@ -105,20 +85,11 @@ val playerModule = module {
         )
     }
 
-    single<LyricsReader> {
-        LyricsReaderImpl(
-            context = androidContext()
-        )
-    }
-
     viewModel<PlayerViewModel> {
         PlayerViewModel(
             savedPlayerState = get(),
             trackRepository = get(),
             metadataProvider = get(),
-            lyricsProvider = get(),
-            lyricsRepository = get(),
-            lyricsReader = get(),
             playlistRepository = get(),
             unsupportedArtworkEditFormats = get<MetadataWriter>().unsupportedArtworkEditFormats,
             settings = get(),

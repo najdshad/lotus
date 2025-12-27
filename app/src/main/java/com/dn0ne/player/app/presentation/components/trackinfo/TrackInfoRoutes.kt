@@ -12,6 +12,4 @@ sealed interface TrackInfoRoutes {
     data object Changes: TrackInfoRoutes
     @Serializable
     data object ManualEditing: TrackInfoRoutes
-    @Serializable
-    data object LyricsControl: TrackInfoRoutes
 }

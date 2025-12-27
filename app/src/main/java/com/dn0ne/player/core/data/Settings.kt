@@ -26,13 +26,6 @@ class Settings(context: Context) {
     private val paletteStyleKey = "palette-style"
     private val amoledDarkThemeKey = "amoled-dark-theme"
 
-    private val lyricsFontSizeKey = "lyrics-font-size"
-    private val lyricsFontWeightKey = "lyrics-font-weight"
-    private val lyricsLineHeightKey = "lyrics-line-height"
-    private val lyricsLetterSpacingKey = "lyrics-letter-spacing"
-    private val lyricsAlignmentKey = "lyrics-alignment"
-    private val useDarkPaletteOnLyricsSheetKey = "dark-palette-on-lyrics-sheet"
-
     private val areRisksOfMetadataEditingAcceptedKey = "metadata-editing-dialog"
 
     private val matchDurationWhenSearchMetadataKey = "match-duration"
@@ -142,82 +135,6 @@ class Settings(context: Context) {
             apply()
         }
     }
-
-    var lyricsFontSize: TextUnit
-        get() = sharedPreferences.getFloat(lyricsFontSizeKey, 28f).sp
-        set(value) {
-            with(sharedPreferences.edit()) {
-                putFloat(lyricsFontSizeKey, value.value)
-                apply()
-            }
-        }
-
-    var lyricsFontWeight: Int
-        get() = sharedPreferences.getInt(lyricsFontWeightKey, 600)
-        set(value) {
-            with(sharedPreferences.edit()) {
-                putInt(lyricsFontWeightKey, value)
-                apply()
-            }
-        }
-
-    var lyricsLineHeight: TextUnit
-        get() = sharedPreferences.getFloat(lyricsLineHeightKey, 32f).sp
-        set(value) {
-            with(sharedPreferences.edit()) {
-                putFloat(lyricsLineHeightKey, value.value)
-                apply()
-            }
-        }
-
-    var lyricsLetterSpacing: TextUnit
-        get() = sharedPreferences.getFloat(lyricsLetterSpacingKey, 0f).sp
-        set(value) {
-            with(sharedPreferences.edit()) {
-                putFloat(lyricsLetterSpacingKey, value.value)
-                apply()
-            }
-        }
-
-    var lyricsAlignment: TextAlign
-        get() = when (sharedPreferences.getInt(lyricsAlignmentKey, 0)) {
-            1 -> TextAlign.Center
-            2 -> TextAlign.End
-            else -> TextAlign.Start
-        }
-        set(value) {
-            with(sharedPreferences.edit()) {
-                putInt(
-                    lyricsAlignmentKey,
-                    when (value) {
-                        TextAlign.Center -> 1
-                        TextAlign.End -> 2
-                        else -> 0
-                    }
-                )
-                apply()
-            }
-        }
-
-    fun resetLyricsStyle() {
-        with(sharedPreferences.edit()) {
-            remove(lyricsFontSizeKey)
-            remove(lyricsFontWeightKey)
-            remove(lyricsLineHeightKey)
-            remove(lyricsLetterSpacingKey)
-            remove(lyricsAlignmentKey)
-            apply()
-        }
-    }
-
-    var useDarkPaletteOnLyricsSheet: Boolean
-        get() = sharedPreferences.getBoolean(useDarkPaletteOnLyricsSheetKey, true)
-        set(value) {
-            with(sharedPreferences.edit()) {
-                putBoolean(useDarkPaletteOnLyricsSheetKey, value)
-                apply()
-            }
-        }
 
     var areRisksOfMetadataEditingAccepted: Boolean
         get() = sharedPreferences.getBoolean(areRisksOfMetadataEditingAcceptedKey, false)

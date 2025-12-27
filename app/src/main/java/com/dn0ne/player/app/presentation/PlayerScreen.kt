@@ -122,7 +122,6 @@ fun PlayerScreen(
     viewModel: PlayerViewModel,
     onCoverArtPick: () -> Unit,
     onFolderPick: (scan: Boolean) -> Unit,
-    onLyricsPick: () -> Unit,
     onPlaylistPick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -805,14 +804,6 @@ fun PlayerScreen(
                                     navController.popBackStack(PlayerRoutes.Main, false)
                                     navController.navigate(PlayerRoutes.Playlist)
                                 },
-                                onLyricsSheetExpandedChange = {
-                                    viewModel.onEvent(
-                                        PlayerScreenEvent.OnLyricsSheetExpandedChange(it)
-                                    )
-                                },
-                                onLyricsClick = {
-                                    viewModel.onEvent(PlayerScreenEvent.OnLyricsClick)
-                                },
                                 settings = viewModel.settings,
                                 onRemoveFromQueueClick = {
                                     viewModel.onEvent(PlayerScreenEvent.OnRemoveFromQueueClick(it))
@@ -860,25 +851,6 @@ fun PlayerScreen(
                     },
                     onRisksOfMetadataEditingAccept = {
                         viewModel.onEvent(PlayerScreenEvent.OnAcceptingRisksOfMetadataEditing)
-                    },
-                    onLyricsControlClick = {
-                        viewModel.onEvent(PlayerScreenEvent.OnLyricsControlClick)
-                    },
-                    onPickLyricsClick = onLyricsPick,
-                    onDeleteLyricsClick = {
-                        viewModel.onEvent(PlayerScreenEvent.OnDeleteLyricsClick)
-                    },
-                    onFetchLyricsFromRemoteClick = {
-                        viewModel.onEvent(PlayerScreenEvent.OnFetchLyricsFromRemoteClick)
-                    },
-                    onCopyLyricsFromTagClick = {
-                        viewModel.onEvent(PlayerScreenEvent.OnCopyLyricsFromTagClick)
-                    },
-                    onWriteLyricsToTagClick = {
-                        viewModel.onEvent(PlayerScreenEvent.OnWriteLyricsToTagClick)
-                    },
-                    onPublishLyricsOnRemoteClick = {
-                        viewModel.onEvent(PlayerScreenEvent.OnPublishLyricsOnRemoteClick)
                     },
                     modifier = Modifier
                         .fillMaxSize()

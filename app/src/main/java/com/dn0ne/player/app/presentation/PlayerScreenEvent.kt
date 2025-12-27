@@ -12,7 +12,6 @@ sealed interface PlayerScreenEvent {
     data class OnTrackClick(val track: Track, val playlist: Playlist): PlayerScreenEvent
 
     data class OnPlayerExpandedChange(val isExpanded: Boolean): PlayerScreenEvent
-    data class OnLyricsSheetExpandedChange(val isExpanded: Boolean): PlayerScreenEvent
 
     data object OnPlayClick: PlayerScreenEvent
     data object OnPauseClick: PlayerScreenEvent
@@ -22,7 +21,6 @@ sealed interface PlayerScreenEvent {
     data object OnResetPlayback: PlayerScreenEvent
 
     data object OnPlaybackModeClick: PlayerScreenEvent
-    data object OnLyricsClick: PlayerScreenEvent
 
     data class OnPlayNextClick(val track: Track): PlayerScreenEvent
     data class OnAddToQueueClick(val tracks: List<Track>): PlayerScreenEvent
@@ -62,11 +60,4 @@ sealed interface PlayerScreenEvent {
 
     data class OnRemoveFromQueueClick(val index: Int): PlayerScreenEvent
     data class OnReorderingQueue(val from: Int, val to: Int): PlayerScreenEvent
-
-    data object OnLyricsControlClick: PlayerScreenEvent
-    data object OnDeleteLyricsClick: PlayerScreenEvent
-    data object OnCopyLyricsFromTagClick: PlayerScreenEvent
-    data object OnWriteLyricsToTagClick: PlayerScreenEvent
-    data object OnFetchLyricsFromRemoteClick: PlayerScreenEvent
-    data object OnPublishLyricsOnRemoteClick: PlayerScreenEvent
 }
