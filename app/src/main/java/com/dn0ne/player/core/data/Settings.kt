@@ -238,20 +238,9 @@ class Settings(context: Context) {
     }
 
     private val _tabs = MutableStateFlow(
-        sharedPreferences.getString(tabOrderKey, null)?.let {
-            it.split(";").map {
-                Tab.valueOf(it)
-            }
-        } ?: Tab.entries.toList()
+        listOf(Tab.Albums, Tab.Artists, Tab.Tracks, Tab.Playlists)
     )
     val tabs = _tabs.asStateFlow()
-    fun updateTabOrder(tabs: List<Tab>) {
-        _tabs.update { tabs }
-        with(sharedPreferences.edit()) {
-            putString(tabOrderKey, tabs.map { it.name }.joinToString(";"))
-            apply()
-        }
-    }
 
     var defaultTab: Tab
         get() = Tab.entries[sharedPreferences.getInt(defaultTabKey, 1)]

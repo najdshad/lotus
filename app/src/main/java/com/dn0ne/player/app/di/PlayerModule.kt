@@ -1,6 +1,5 @@
 package com.dn0ne.player.app.di
 
-import com.dn0ne.player.EqualizerController
 import com.dn0ne.player.app.data.SavedPlayerState
 import com.dn0ne.player.app.data.repository.PlaylistJson
 import com.dn0ne.player.app.data.repository.PlaylistRepository
@@ -64,12 +63,6 @@ val playerModule = module {
         )
     }
 
-    single<EqualizerController> {
-        EqualizerController(
-            context = androidContext()
-        )
-    }
-
     viewModel<PlayerViewModel> {
         PlayerViewModel(
             savedPlayerState = get(),
@@ -77,8 +70,7 @@ val playerModule = module {
             playlistRepository = get(),
             unsupportedArtworkEditFormats = emptyList(),
             settings = get(),
-            musicScanner = get(),
-            equalizerController = get()
+            musicScanner = get()
         )
     }
 }

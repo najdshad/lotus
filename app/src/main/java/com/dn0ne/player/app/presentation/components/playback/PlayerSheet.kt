@@ -54,10 +54,8 @@ import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.RepeatOne
-import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
-import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -508,9 +506,6 @@ fun ExpandedPlayer(
     var showQueue by remember {
         mutableStateOf(false)
     }
-    var showSleepTimerSheet by remember {
-        mutableStateOf(false)
-    }
 
     Box {
         Box(
@@ -551,45 +546,12 @@ fun ExpandedPlayer(
                     Row {
                         IconButton(
                             onClick = {
-                                showSleepTimerSheet = true
+                                showQueue = true
                             }
                         ) {
                             Icon(
-                                imageVector = Icons.Rounded.Timer,
-                                contentDescription = context.resources.getString(R.string.set_sleep_timer),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        AnimatedVisibility(
-                            visible = playbackState.playbackMode != PlaybackMode.Shuffle,
-                            enter = expandHorizontally(),
-                            exit = shrinkHorizontally()
-                        ) {
-                            IconButton(
-                                onClick = {
-                                    if (playbackState.playbackMode != PlaybackMode.Shuffle) {
-                                        showQueue = true
-                                    }
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
-                                    contentDescription = context.resources.getString(R.string.show_queue),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-
-                        IconButton(
-                            onClick = {
-                                onLyricsSheetExpandedChange(true)
-                                onLyricsClick()
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Lyrics,
-                                contentDescription = context.resources.getString(R.string.show_lyrics),
+                                imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
+                                contentDescription = context.resources.getString(R.string.show_queue),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -601,7 +563,6 @@ fun ExpandedPlayer(
                                 imageVector = when (playbackMode) {
                                     PlaybackMode.Repeat -> Icons.Rounded.Repeat
                                     PlaybackMode.RepeatOne -> Icons.Rounded.RepeatOne
-                                    PlaybackMode.Shuffle -> Icons.Rounded.Shuffle
                                 },
                                 contentDescription = context.resources.getString(R.string.playback_mode_toggle),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -749,45 +710,12 @@ fun ExpandedPlayer(
                             Row {
                                 IconButton(
                                     onClick = {
-                                        showSleepTimerSheet = true
+                                        showQueue = true
                                     }
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Rounded.Timer,
-                                        contentDescription = context.resources.getString(R.string.set_sleep_timer),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-
-                                AnimatedVisibility(
-                                    visible = playbackState.playbackMode != PlaybackMode.Shuffle,
-                                    enter = expandHorizontally(),
-                                    exit = shrinkHorizontally()
-                                ) {
-                                    IconButton(
-                                        onClick = {
-                                            if (playbackState.playbackMode != PlaybackMode.Shuffle) {
-                                                showQueue = true
-                                            }
-                                        }
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
-                                            contentDescription = context.resources.getString(R.string.show_queue),
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-
-                                IconButton(
-                                    onClick = {
-                                        onLyricsSheetExpandedChange(true)
-                                        onLyricsClick()
-                                    }
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Lyrics,
-                                        contentDescription = context.resources.getString(R.string.show_lyrics),
+                                        imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
+                                        contentDescription = context.resources.getString(R.string.show_queue),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
@@ -799,7 +727,6 @@ fun ExpandedPlayer(
                                         imageVector = when (playbackMode) {
                                             PlaybackMode.Repeat -> Icons.Rounded.Repeat
                                             PlaybackMode.RepeatOne -> Icons.Rounded.RepeatOne
-                                            PlaybackMode.Shuffle -> Icons.Rounded.Shuffle
                                         },
                                         contentDescription = context.resources.getString(R.string.playback_mode_toggle),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -928,17 +855,8 @@ fun ExpandedPlayer(
                 }
             )
         }
-
-        if (showSleepTimerSheet) {
-            SleepTimerBottomSheet(
-                onDismissRequest = {
-                    showSleepTimerSheet = false
-                }
-            )
-        }
     }
 }
-
 @Composable
 fun PlaybackControl(
     playbackStateFlow: StateFlow<PlaybackState>,

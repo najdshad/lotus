@@ -10,7 +10,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
-import com.dn0ne.player.EqualizerController
 import com.dn0ne.player.R
 import com.dn0ne.player.app.data.SavedPlayerState
 import com.dn0ne.player.app.data.repository.PlaylistRepository
@@ -51,16 +50,14 @@ class PlayerViewModel(
     private val playlistRepository: PlaylistRepository,
     private val unsupportedArtworkEditFormats: List<String>,
     val settings: Settings,
-    private val musicScanner: MusicScanner,
-    private val equalizerController: EqualizerController
+    private val musicScanner: MusicScanner
 ) : ViewModel() {
     var player: Player? = null
 
     private val _settingsSheetState = MutableStateFlow(
         SettingsSheetState(
             settings = settings,
-            musicScanner = musicScanner,
-            equalizerController = equalizerController
+            musicScanner = musicScanner
         )
     )
     val settingsSheetState = _settingsSheetState.stateIn(
@@ -128,30 +125,6 @@ class PlayerViewModel(
         started = SharingStarted.WhileSubscribed(5000L),
         initialValue = emptyList()
     )
-    val genrePlaylists = _trackList.map {
-        it.groupBy { it.genre }.entries.map {
-            Playlist(
-                name = it.key,
-                trackList = it.value
-            )
-        }
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000L),
-        initialValue = emptyList()
-    )
-    val folderPlaylists = _trackList.map {
-        it.groupBy { it.data.substringBeforeLast('/') }.entries.map {
-            Playlist(
-                name = it.key.substringAfterLast('/'),
-                trackList = it.value
-            )
-        }
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000L),
-        initialValue = emptyList()
-    )
 
     val playlists = playlistRepository.getPlaylists().stateIn(
         scope = viewModelScope,
@@ -187,9 +160,6 @@ class PlayerViewModel(
             started = SharingStarted.WhileSubscribed(5000L),
             initialValue = TrackInfoSheetState()
         )
-
-    private val _pendingMetadata = Channel<Pair<Track, Metadata>>()
-    val pendingMetadata = _pendingMetadata.receiveAsFlow()
 
     private val _pendingTrackUris = Channel<Uri>()
 
@@ -487,223 +457,6 @@ class PlayerViewModel(
                         isShown = false
                     )
                 }
-                }
-            }
-
-            is OnSearchInfo -> {
-                viewModelScope.launch {
-                    _infoSearchSheetState.update {
-                        it.copy(
-                            isLoading = true
-                        )
-                    }
-
-                    val result = metadataProvider.searchMetadata(
-                        query = event.query,
-                        trackDuration = _trackInfoSheetState.value.track?.duration?.toLong()
-                            ?: return@launch
-                    )
-                    when (result) {
-                        is Result.Error -> {
-                            when (result.error) {
-                                DataError.Network.BadRequest -> {
-                                    SnackbarController.sendEvent(
-                                        SnackbarEvent(
-                                            message = R.string.query_was_corrupted
-                                        )
-                                    )
-                                    Log.d("Metadata Search", "${result.error} - ${event.query}")
-                                }
-
-                                DataError.Network.InternalServerError -> {
-                                    SnackbarController.sendEvent(
-                                        SnackbarEvent(
-                                            message = R.string.musicbrainz_server_error
-                                        )
-                                    )
-                                }
-
-                                DataError.Network.ServiceUnavailable -> {
-                                    SnackbarController.sendEvent(
-                                        SnackbarEvent(
-                                            message = R.string.musicbrainz_is_unavailable
-                                        )
-                                    )
-                                }
-
-                                DataError.Network.ParseError -> {
-                                    SnackbarController.sendEvent(
-                                        SnackbarEvent(
-                                            message = R.string.failed_to_parse_response
-                                        )
-                                    )
-                                    Log.d("Metadata Search", "${result.error} - ${event.query}")
-                                }
-
-                                DataError.Network.NoInternet -> {
-                                    SnackbarController.sendEvent(
-                                        SnackbarEvent(
-                                            message = R.string.no_internet
-                                        )
-                                    )
-                                }
-
-                                else -> {
-                                    SnackbarController.sendEvent(
-                                        SnackbarEvent(
-                                            message = R.string.unknown_error_occurred
-                                        )
-                                    )
-                                    Log.d("Metadata Search", "${result.error} - ${event.query}")
-                                }
-                            }
-                        }
-
-                        is Result.Success -> {
-                            _infoSearchSheetState.update {
-                                it.copy(
-                                    searchResults = result.data
-                                )
-                            }
-                        }
-                    }
-
-                    _infoSearchSheetState.update {
-                        it.copy(
-                            isLoading = false
-                        )
-                    }
-                }
-            }
-
-            is OnMetadataSearchResultPick -> {
-                viewModelScope.launch {
-                    if (_trackInfoSheetState.value.isCoverArtEditable) {
-                        _changesSheetState.update {
-                            it.copy(
-                                isLoadingArt = true
-                            )
-                        }
-                        val result = metadataProvider.getCoverArtBytes(event.searchResult)
-                        var coverArtBytes: ByteArray? = null
-                        when (result) {
-                            is Result.Success -> {
-                                coverArtBytes = result.data
-                                _changesSheetState.update {
-                                    it.copy(
-                                        isLoadingArt = false,
-                                        metadata = it.metadata.copy(
-                                            coverArtBytes = coverArtBytes
-                                        )
-                                    )
-                                }
-                            }
-
-                            is Result.Error -> {
-                                when (result.error) {
-                                    DataError.Network.BadRequest -> {
-                                        SnackbarController.sendEvent(
-                                            SnackbarEvent(
-                                                message = R.string.failed_to_load_cover_art_album_id_corrupted,
-                                            )
-                                        )
-                                    }
-
-                                    DataError.Network.NotFound -> {
-                                        SnackbarController.sendEvent(
-                                            SnackbarEvent(
-                                                message = R.string.cover_art_not_found
-                                            )
-                                        )
-                                    }
-
-                                    DataError.Network.ServiceUnavailable -> {
-                                        SnackbarController.sendEvent(
-                                            SnackbarEvent(
-                                                message = R.string.cover_art_archive_is_unavailable
-                                            )
-                                        )
-                                    }
-
-                                    DataError.Network.NoInternet -> {
-                                        SnackbarController.sendEvent(
-                                            SnackbarEvent(
-                                                message = R.string.no_internet
-                                            )
-                                        )
-                                    }
-
-                                    DataError.Network.RequestTimeout -> {
-                                        SnackbarController.sendEvent(
-                                            SnackbarEvent(
-                                                message = R.string.failed_to_load_cover_art_request_timeout
-                                            )
-                                        )
-                                    }
-
-                                    else -> {
-                                        SnackbarController.sendEvent(
-                                            SnackbarEvent(
-                                                message = R.string.unknown_error_occurred
-                                            )
-                                        )
-                                    }
-                                }
-                                _changesSheetState.update {
-                                    it.copy(
-                                        isLoadingArt = false
-                                    )
-                                }
-                                return@launch
-                            }
-                        }
-                    }
-                }
-
-                _changesSheetState.update {
-                    it.copy(
-                        metadata = Metadata(
-                            title = event.searchResult.title,
-                            album = event.searchResult.album,
-                            artist = event.searchResult.artist,
-                            albumArtist = event.searchResult.albumArtist,
-                            genre = event.searchResult.genres?.joinToString(" / "),
-                            year = event.searchResult.year,
-                            trackNumber = event.searchResult.trackNumber
-                        ),
-                        isArtFromGallery = false
-                    )
-                }
-            }
-
-            is OnOverwriteMetadataClick -> {
-                _manualInfoEditSheetState.update {
-                    it.copy(
-                        pickedCoverArtBytes = null
-                    )
-                }
-                viewModelScope.launch {
-                    _trackInfoSheetState.value.track?.let { track ->
-                        _pendingMetadata.send(track to event.metadata)
-                    }
-                }
-            }
-
-            OnRestoreCoverArtClick -> {
-                _manualInfoEditSheetState.update {
-                    it.copy(
-                        pickedCoverArtBytes = null
-                    )
-                }
-            }
-
-            is OnConfirmMetadataEditClick -> {
-                _changesSheetState.update {
-                    it.copy(
-                        metadata = event.metadata,
-                        isArtFromGallery = event.metadata.coverArtBytes != null
-                    )
-                }
             }
 
             is OnPlaylistSelection -> {
@@ -912,17 +665,10 @@ class PlayerViewModel(
         when (playbackMode) {
             PlaybackMode.Repeat -> {
                 player?.repeatMode = Player.REPEAT_MODE_ALL
-                player?.shuffleModeEnabled = false
             }
 
             PlaybackMode.RepeatOne -> {
                 player?.repeatMode = Player.REPEAT_MODE_ONE
-                player?.shuffleModeEnabled = false
-            }
-
-            PlaybackMode.Shuffle -> {
-                player?.repeatMode = Player.REPEAT_MODE_ALL
-                player?.shuffleModeEnabled = true
             }
         }
     }
