@@ -51,13 +51,8 @@ class TrackRepositoryImpl(
         val scanMusicFolder = settings.scanMusicFolder.value
         val extraScanFolders = settings.extraScanFolders.value
         val excludedScanFolders = settings.excludedScanFolders.value
-        val ignoreShortTracks = settings.ignoreShortTracks
 
         val selection = buildString {
-            if (ignoreShortTracks) {
-                append("${MediaStore.Audio.Media.DURATION} >= ? AND ")
-            }
-
             append("(")
             var scanFilter = ""
             scanFilter = if (isScanModeInclusive) {
@@ -75,10 +70,6 @@ class TrackRepositoryImpl(
         }
 
         val selectionArgs = mutableListOf<String>().apply {
-            if (ignoreShortTracks) {
-                add(TimeUnit.MILLISECONDS.convert(30, TimeUnit.SECONDS).toString())
-            }
-
             if (isScanModeInclusive) {
                 if (scanMusicFolder) {
                     Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)?.path?.let {
@@ -197,8 +188,8 @@ class TrackRepositoryImpl(
         val query = context.contentResolver.query(
             collection,
             projection,
-            selection.takeIf { settings.ignoreShortTracks },
-            selectionArgs. takeIf { settings.ignoreShortTracks },
+            selection,
+            selectionArgs,
             null
         )
 

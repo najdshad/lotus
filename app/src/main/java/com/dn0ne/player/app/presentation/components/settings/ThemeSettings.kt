@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Album
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Contrast
@@ -56,14 +55,12 @@ import com.dn0ne.player.app.presentation.components.settings.Theme.Appearance
 import com.dn0ne.player.app.presentation.components.settings.Theme.PaletteStyle
 import com.dn0ne.player.app.presentation.components.topbar.ColumnWithCollapsibleTopBar
 import com.dn0ne.player.core.data.Settings
-import com.kmpalette.DominantColorState
-import com.materialkolor.DynamicMaterialTheme
 
 @Composable
 fun ThemeSettings(
     settings: Settings,
     onBackClick: () -> Unit,
-    dominantColorState: DominantColorState<ImageBitmap>,
+    dominantColorState: DominantColorState<ImageBitmap>? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -198,159 +195,6 @@ fun ThemeSettings(
             }
         }
 
-        val selectedPalette by settings.paletteStyle.collectAsState()
-        val paletteOptions = remember {
-            listOf(
-                PaletteOption(
-                    title = context.resources.getString(R.string.palette_tonal_spot),
-                    onSelection = {
-                        settings.updatePaletteStyle(PaletteStyle.TonalSpot)
-                    },
-                    style = PaletteStyle.TonalSpot
-                ),
-                PaletteOption(
-                    title = context.resources.getString(R.string.palette_neutral),
-                    onSelection = {
-                        settings.updatePaletteStyle(PaletteStyle.Neutral)
-                    },
-                    style = PaletteStyle.Neutral
-                ),
-                PaletteOption(
-                    title = context.resources.getString(R.string.palette_vibrant),
-                    onSelection = {
-                        settings.updatePaletteStyle(PaletteStyle.Vibrant)
-                    },
-                    style = PaletteStyle.Vibrant
-                ),
-                PaletteOption(
-                    title = context.resources.getString(R.string.palette_expressive),
-                    onSelection = {
-                        settings.updatePaletteStyle(PaletteStyle.Expressive)
-                    },
-                    style = PaletteStyle.Expressive
-                ),
-                PaletteOption(
-                    title = context.resources.getString(R.string.palette_rainbow),
-                    onSelection = {
-                        settings.updatePaletteStyle(PaletteStyle.Rainbow)
-                    },
-                    style = PaletteStyle.Rainbow
-                ),
-                PaletteOption(
-                    title = context.resources.getString(R.string.palette_fruit_salad),
-                    onSelection = {
-                        settings.updatePaletteStyle(PaletteStyle.FruitSalad)
-                    },
-                    style = PaletteStyle.FruitSalad
-                ),
-                PaletteOption(
-                    title = context.resources.getString(R.string.palette_monochrome),
-                    onSelection = {
-                        settings.updatePaletteStyle(PaletteStyle.Monochrome)
-                    },
-                    style = PaletteStyle.Monochrome
-                ),
-                PaletteOption(
-                    title = context.resources.getString(R.string.palette_fidelity),
-                    onSelection = {
-                        settings.updatePaletteStyle(PaletteStyle.Fidelity)
-                    },
-                    style = PaletteStyle.Fidelity
-                ),
-                PaletteOption(
-                    title = context.resources.getString(R.string.palette_content),
-                    onSelection = {
-                        settings.updatePaletteStyle(PaletteStyle.Content)
-                    },
-                    style = PaletteStyle.Content
-                )
-            )
-        }
-
-        SettingOptionsRow(
-            title = context.resources.getString(R.string.palette_style),
-            options = paletteOptions,
-            modifier = Modifier.fillMaxWidth()
-        ) { option ->
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .clip(ShapeDefaults.Large)
-                    .clickable {
-                        option.onSelection()
-                    }
-                    .padding(8.dp)
-            ) {
-                val isSelected by remember {
-                    derivedStateOf {
-                        selectedPalette == option.style
-                    }
-                }
-                Column(
-                    modifier = Modifier
-                        .clip(ShapeDefaults.Medium)
-                        .width(60.dp)
-                        .border(
-                            width = animateDpAsState(
-                                targetValue = if (isSelected) 2.dp else (-1).dp,
-                                label = ""
-                            ).value,
-                            color = MaterialTheme.colorScheme.primary,
-                            shape = ShapeDefaults.Medium
-                        ),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    DynamicMaterialTheme(
-                        seedColor = dominantColorState.color,
-                        useDarkTheme = when(selectedAppearance) {
-                            Appearance.System -> isDarkTheme
-                            Appearance.Light -> false
-                            Appearance.Dark -> true
-                        },
-                        style = when (option.style) {
-                            PaletteStyle.TonalSpot -> com.materialkolor.PaletteStyle.TonalSpot
-                            PaletteStyle.Neutral -> com.materialkolor.PaletteStyle.Neutral
-                            PaletteStyle.Vibrant -> com.materialkolor.PaletteStyle.Vibrant
-                            PaletteStyle.Expressive -> com.materialkolor.PaletteStyle.Expressive
-                            PaletteStyle.Rainbow -> com.materialkolor.PaletteStyle.Rainbow
-                            PaletteStyle.FruitSalad -> com.materialkolor.PaletteStyle.FruitSalad
-                            PaletteStyle.Monochrome -> com.materialkolor.PaletteStyle.Monochrome
-                            PaletteStyle.Fidelity -> com.materialkolor.PaletteStyle.Fidelity
-                            PaletteStyle.Content -> com.materialkolor.PaletteStyle.Content
-                        },
-                        animate = true
-                    ) {
-                        listOf(
-                            MaterialTheme.colorScheme.primary,
-                            MaterialTheme.colorScheme.secondary,
-                            MaterialTheme.colorScheme.tertiary,
-                            MaterialTheme.colorScheme.tertiaryContainer,
-                            MaterialTheme.colorScheme.secondaryContainer,
-                            MaterialTheme.colorScheme.primaryContainer,
-                        ).fastForEach {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(24.dp)
-                                    .clip(RoundedCornerShape(2.dp))
-                                    .background(color = it)
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = option.title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (isSelected) {
-                        MaterialTheme.colorScheme.primary
-                    } else MaterialTheme.colorScheme.onSurface
-                )
-            }
-        }
-
         val amoledDarkTheme by settings.amoledDarkTheme.collectAsState()
         SettingSwitch(
             title = context.resources.getString(R.string.black_theme),
@@ -380,20 +224,6 @@ fun ThemeSettings(
                     .padding(top = 8.dp)
             )
         }
-
-        val useAlbumArtColor by settings.useAlbumArtColor.collectAsState()
-        SettingSwitch(
-            title = context.resources.getString(R.string.use_album_art_color),
-            supportingText = context.resources.getString(R.string.use_album_art_color_explain),
-            icon = Icons.Rounded.Album,
-            isChecked = useAlbumArtColor,
-            onCheckedChange = {
-                settings.updateUseAlbumArtColor(it)
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp)
-        )
     }
 }
 
@@ -406,28 +236,10 @@ class AppearanceOption(
     val contentColor: Color
 ) : SettingOption(title, onSelection)
 
-class PaletteOption(
-    title: String,
-    onSelection: () -> Unit,
-    val style: PaletteStyle,
-) : SettingOption(title, onSelection)
-
 object Theme {
     enum class Appearance {
         System,
         Light,
         Dark
-    }
-
-    enum class PaletteStyle {
-        TonalSpot,
-        Neutral,
-        Vibrant,
-        Expressive,
-        Rainbow,
-        FruitSalad,
-        Monochrome,
-        Fidelity,
-        Content
     }
 }

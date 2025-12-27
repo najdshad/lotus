@@ -22,8 +22,6 @@ class Settings(context: Context) {
 
     private val appearanceKey = "appearance"
     private val useDynamicColorKey = "use-dynamic-color"
-    private val useAlbumArtColorKey = "use-album-art-color"
-    private val paletteStyleKey = "palette-style"
     private val amoledDarkThemeKey = "amoled-dark-theme"
 
     private val trackSortKey = "track-sort-key"
@@ -32,14 +30,12 @@ class Settings(context: Context) {
     private val playlistSortOrderKey = "playlist-sort-order-key"
 
     private val isScanModeInclusiveKey = "is-scan-mode-inclusive"
-    private val ignoreShortTracksKey = "exclude-short-tracks"
     private val scanMusicFolderKey = "scan-music-in-music"
     private val extraScanFoldersKey = "extra-scan-folders"
     private val excludedScanFoldersKey = "excluded-scan-folders"
     private val scanOnAppLaunchKey = "scan-on-app-launch"
 
     private val tabOrderKey = "tab-order"
-    private val defaultTabKey = "default-tab"
 
     private val jumpToBeginningKey = "jump-to-beginning"
 
@@ -88,32 +84,6 @@ class Settings(context: Context) {
         _useDynamicColor.update { value }
         with(sharedPreferences.edit()) {
             putBoolean(useDynamicColorKey, value)
-            apply()
-        }
-    }
-
-    private val _useAlbumArtColor = MutableStateFlow(
-        sharedPreferences.getBoolean(useAlbumArtColorKey, true)
-    )
-    val useAlbumArtColor = _useAlbumArtColor.asStateFlow()
-    fun updateUseAlbumArtColor(value: Boolean) {
-        _useAlbumArtColor.update { value }
-        with(sharedPreferences.edit()) {
-            putBoolean(useAlbumArtColorKey, value)
-            apply()
-        }
-    }
-
-    private val _paletteStyle = MutableStateFlow(
-        Theme.PaletteStyle.entries[sharedPreferences.getInt(paletteStyleKey, 0)]
-    )
-    val paletteStyle = _paletteStyle.asStateFlow()
-    fun updatePaletteStyle(paletteStyle: Theme.PaletteStyle) {
-        _paletteStyle.update {
-            paletteStyle
-        }
-        with(sharedPreferences.edit()) {
-            putInt(paletteStyleKey, paletteStyle.ordinal)
             apply()
         }
     }
@@ -180,15 +150,6 @@ class Settings(context: Context) {
         }
     }
 
-    var ignoreShortTracks: Boolean
-        get() = sharedPreferences.getBoolean(ignoreShortTracksKey, true)
-        set(value) {
-            with(sharedPreferences.edit()) {
-                putBoolean(ignoreShortTracksKey, value)
-                apply()
-            }
-        }
-
     private val _scanMusicFolder = MutableStateFlow(
         sharedPreferences.getBoolean(scanMusicFolderKey, true)
     )
@@ -242,15 +203,6 @@ class Settings(context: Context) {
     )
     val tabs = _tabs.asStateFlow()
 
-    var defaultTab: Tab
-        get() = Tab.entries[sharedPreferences.getInt(defaultTabKey, 1)]
-        set(value) {
-            with(sharedPreferences.edit()) {
-                putInt(defaultTabKey, value.ordinal)
-                apply()
-            }
-        }
-
     var jumpToBeginning: Boolean
         get() = sharedPreferences.getBoolean(jumpToBeginningKey, true)
         set(value) {
@@ -259,16 +211,4 @@ class Settings(context: Context) {
                 apply()
             }
         }
-
-    private val _gridPlaylist = MutableStateFlow(
-        sharedPreferences.getBoolean(gridPlaylistsKey, true)
-    )
-    val gridPlaylists = _gridPlaylist.asStateFlow()
-    fun updateGridPlaylists(value: Boolean) {
-        _gridPlaylist.update { value }
-        with(sharedPreferences.edit()) {
-            putBoolean(gridPlaylistsKey, value)
-            apply()
-        }
-    }
 }

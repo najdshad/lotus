@@ -108,11 +108,8 @@ import com.dn0ne.player.app.presentation.components.topbar.TopBarContent
 import com.dn0ne.player.app.presentation.components.trackList
 import com.dn0ne.player.app.presentation.components.trackinfo.SearchField
 import com.dn0ne.player.app.presentation.components.trackinfo.TrackInfoSheet
-import com.kmpalette.color
-import com.kmpalette.rememberDominantColorState
 import com.materialkolor.DynamicMaterialTheme
 import com.materialkolor.PaletteStyle
-import com.materialkolor.ktx.toHct
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
@@ -125,63 +122,15 @@ fun PlayerScreen(
     modifier: Modifier = Modifier,
 ) {
     val useDynamicColor by viewModel.settings.useDynamicColor.collectAsState()
-    val useAlbumArtColor by viewModel.settings.useAlbumArtColor.collectAsState()
-    val dominantColorState = rememberDominantColorState()
-    var coverArtBitmap by remember {
-        mutableStateOf<ImageBitmap?>(null)
-    }
-    val colorToApply by remember(coverArtBitmap, useAlbumArtColor, useDynamicColor) {
-        derivedStateOf {
-            if (useAlbumArtColor && coverArtBitmap != null) {
-                dominantColorState.result
-                    ?.paletteOrNull
-                    ?.swatches
-                    ?.sortedByDescending { it.population }
-                    ?.let { swatches ->
-                        val firstSwatch = swatches.first()
-                        val firstSwatchColorHct = firstSwatch.color.toHct()
-                        val firstSwatchPopulation = firstSwatch.population
-                        val moreChromatic = swatches.fastFirstOrNull {
-                            it.color.toHct().chroma - firstSwatchColorHct.chroma >= 30 &&
-                                    it.population.toFloat() / firstSwatchPopulation >= .1f
-                        }
-                        moreChromatic?.color ?: firstSwatch.color
-                    } ?: dominantColorState.color
-            } else dominantColorState.color
-        }
-    }
-
-    LaunchedEffect(useAlbumArtColor, useDynamicColor) {
-        if (useAlbumArtColor) {
-            coverArtBitmap?.let {
-                dominantColorState.updateFrom(it)
-            }
-        } else dominantColorState.reset()
-    }
-
     val appearance by viewModel.settings.appearance.collectAsState()
     val amoledDarkTheme by viewModel.settings.amoledDarkTheme.collectAsState()
-    val paletteStyle by viewModel.settings.paletteStyle.collectAsState()
     DynamicMaterialTheme(
-        seedColor = colorToApply,
-        primary = colorToApply.takeIf { it.toHct().chroma <= 20 },
         useDarkTheme = when (appearance) {
             Theme.Appearance.System -> isSystemInDarkTheme()
             Theme.Appearance.Light -> false
             Theme.Appearance.Dark -> true
         },
         withAmoled = amoledDarkTheme,
-        style = when (paletteStyle) {
-            Theme.PaletteStyle.TonalSpot -> PaletteStyle.TonalSpot
-            Theme.PaletteStyle.Neutral -> PaletteStyle.Neutral
-            Theme.PaletteStyle.Vibrant -> PaletteStyle.Vibrant
-            Theme.PaletteStyle.Expressive -> PaletteStyle.Expressive
-            Theme.PaletteStyle.Rainbow -> PaletteStyle.Rainbow
-            Theme.PaletteStyle.FruitSalad -> PaletteStyle.FruitSalad
-            Theme.PaletteStyle.Monochrome -> PaletteStyle.Monochrome
-            Theme.PaletteStyle.Fidelity -> PaletteStyle.Fidelity
-            Theme.PaletteStyle.Content -> PaletteStyle.Content
-        },
         animationSpec = tween(300, 200),
         animate = true
     ) {
@@ -211,10 +160,6 @@ fun PlayerScreen(
                 }
 
                 LaunchedEffect(currentTrack) {
-                    if (currentTrack == null) {
-                        coverArtBitmap = null
-                        dominantColorState.reset()
-                    }
                 }
 
                 val trackSort by viewModel.trackSort.collectAsState()
@@ -277,11 +222,10 @@ fun PlayerScreen(
                         val artistPlaylists by viewModel.artistPlaylists.collectAsState()
 
                         val gridState = rememberLazyGridState()
-                        val gridPlaylists by viewModel.settings.gridPlaylists.collectAsState()
 
                         val tabs by viewModel.settings.tabs.collectAsState()
                         var selectedTab by rememberSaveable {
-                            mutableStateOf(viewModel.settings.defaultTab)
+                            mutableStateOf(Tab.Albums)
                         }
 
                         val shouldShowLocateButton by remember(currentTrack, trackList) {
@@ -418,13 +362,7 @@ fun PlayerScreen(
                             onSettingsClick = {
                                 viewModel.onEvent(PlayerScreenEvent.OnSettingsClick)
                             },
-                            replaceSearchWithFilter = replaceSearchWithFilter,
-                            gridPlaylists = gridPlaylists,
-                            onGridPlaylistsClick = {
-                                viewModel.settings.updateGridPlaylists(
-                                    !gridPlaylists
-                                )
-                            }
+                            replaceSearchWithFilter = replaceSearchWithFilter
                         )
                     }
 
@@ -711,14 +649,6 @@ fun PlayerScreen(
                     ) {
                         currentTrack?.let {
 
-                            if (useAlbumArtColor) {
-                                LaunchedEffect(coverArtBitmap) {
-                                    coverArtBitmap?.let {
-                                        dominantColorState.updateFrom(it)
-                                    }
-                                }
-                            }
-
                             PlayerSheet(
                                 playbackStateFlow = viewModel.playbackState,
                                 onPlayerExpandedChange = {
@@ -744,9 +674,6 @@ fun PlayerScreen(
                                 },
                                 onPlaybackModeClick = {
                                     viewModel.onEvent(PlayerScreenEvent.OnPlaybackModeClick)
-                                },
-                                onCoverArtLoaded = {
-                                    coverArtBitmap = it
                                 },
                                 onPlayNextClick = {
                                     viewModel.onEvent(PlayerScreenEvent.OnPlayNextClick(it))
@@ -848,7 +775,7 @@ fun PlayerScreen(
                     onCloseClick = {
                         viewModel.onEvent(PlayerScreenEvent.OnCloseSettingsClick)
                     },
-                    dominantColorState = dominantColorState,
+                    dominantColorState = null,
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -884,8 +811,6 @@ fun MainPlayerScreen(
     onAlbumPlaylistSelection: (Playlist) -> Unit,
     onArtistPlaylistSelection: (Playlist) -> Unit,
     replaceSearchWithFilter: Boolean,
-    gridPlaylists: Boolean,
-    onGridPlaylistsClick: () -> Unit,
     onSettingsClick: () -> Unit
 ) {
     val context = LocalContext.current
@@ -996,23 +921,6 @@ fun MainPlayerScreen(
                             }
 
                             Row {
-                                if (tab != Tab.Tracks) {
-                                    IconButton(
-                                        onClick = onGridPlaylistsClick
-                                    ) {
-                                        Icon(
-                                            imageVector = if (gridPlaylists) {
-                                                Icons.Rounded.GridView
-                                            } else Icons.AutoMirrored.Rounded.ViewList,
-                                            contentDescription = context.resources.getString(
-                                                if (gridPlaylists) {
-                                                    R.string.enable_list_view
-                                                } else R.string.enable_grid_view
-                                            )
-                                        )
-                                    }
-                                }
-
                                 IconButton(
                                     onClick = {
                                         showSearchField = true
@@ -1194,8 +1102,9 @@ fun MainPlayerScreen(
         contentVerticalArrangement = Arrangement.spacedBy(8.dp),
         contentPadding = PaddingValues(horizontal = 16.dp),
         gridCells = {
-            if (it == Tab.Tracks || !gridPlaylists) GridCells.Fixed(1) else {
-                GridCells.Adaptive(150.dp)
+            when (it) {
+                Tab.Tracks, Tab.Playlists -> GridCells.Fixed(1)
+                Tab.Albums, Tab.Artists -> GridCells.Adaptive(150.dp)
             }
         },
         modifier = Modifier
@@ -1252,208 +1161,105 @@ fun MainPlayerScreen(
             }
 
             Tab.Playlists -> {
-                if (gridPlaylists) {
-                    if (!isInSelectionMode) {
-                        playlistCards(
-                            playlists = playlists.filterPlaylists(searchFieldValue),
-                            sort = playlistSort,
-                            sortOrder = playlistSortOrder,
-                            fallbackPlaylistTitle = context.resources.getString(R.string.unknown),
-                            showSinglePreview = false,
-                            onCardClick = onPlaylistSelection,
-                            onLongClick = {
-                                isInSelectionMode = true
-                                selectedPlaylists.add(it)
-                            }
-                        )
-                    } else {
-                        selectionCards(
-                            playlists = playlists.filterPlaylists(searchFieldValue),
-                            selectedPlaylists = selectedPlaylists,
-                            sort = playlistSort,
-                            sortOrder = playlistSortOrder,
-                            fallbackPlaylistTitle = context.resources.getString(R.string.unknown),
-                            showSinglePreview = false,
-                            onCardClick = {
-                                if (it in selectedPlaylists) {
-                                    selectedPlaylists.remove(it)
-                                } else selectedPlaylists.add(it)
-
-                                if (selectedPlaylists.isEmpty()) {
-                                    isInSelectionMode = false
-                                }
-                            }
-                        )
-                    }
+                if (!isInSelectionMode) {
+                    playlistRows(
+                        playlists = playlists.filterPlaylists(searchFieldValue),
+                        sort = playlistSort,
+                        sortOrder = playlistSortOrder,
+                        fallbackPlaylistTitle = context.resources.getString(R.string.unknown),
+                        showSinglePreview = false,
+                        onRowClick = onPlaylistSelection,
+                        onLongClick = {
+                            isInSelectionMode = true
+                            selectedPlaylists.add(it)
+                        }
+                    )
                 } else {
-                    if (!isInSelectionMode) {
-                        playlistRows(
-                            playlists = playlists.filterPlaylists(searchFieldValue),
-                            sort = playlistSort,
-                            sortOrder = playlistSortOrder,
-                            fallbackPlaylistTitle = context.resources.getString(R.string.unknown),
-                            showSinglePreview = false,
-                            onRowClick = onPlaylistSelection,
-                            onLongClick = {
-                                isInSelectionMode = true
-                                selectedPlaylists.add(it)
-                            }
-                        )
-                    } else {
-                        selectionRows(
-                            playlists = playlists.filterPlaylists(searchFieldValue),
-                            selectedPlaylists = selectedPlaylists,
-                            sort = playlistSort,
-                            sortOrder = playlistSortOrder,
-                            fallbackPlaylistTitle = context.resources.getString(R.string.unknown),
-                            showSinglePreview = false,
-                            onRowClick = {
-                                if (it in selectedPlaylists) {
-                                    selectedPlaylists.remove(it)
-                                } else selectedPlaylists.add(it)
+                    selectionRows(
+                        playlists = playlists.filterPlaylists(searchFieldValue),
+                        selectedPlaylists = selectedPlaylists,
+                        sort = playlistSort,
+                        sortOrder = playlistSortOrder,
+                        fallbackPlaylistTitle = context.resources.getString(R.string.unknown),
+                        showSinglePreview = false,
+                        onRowClick = {
+                            if (it in selectedPlaylists) {
+                                selectedPlaylists.remove(it)
+                            } else selectedPlaylists.add(it)
 
-                                if (selectedPlaylists.isEmpty()) {
-                                    isInSelectionMode = false
-                                }
+                            if (selectedPlaylists.isEmpty()) {
+                                isInSelectionMode = false
                             }
-                        )
-                    }
+                        }
+                    )
                 }
             }
 
             Tab.Albums -> {
-                if (gridPlaylists) {
-                    if (!isInSelectionMode) {
-                        playlistCards(
-                            playlists = albumPlaylists.filterPlaylists(searchFieldValue),
-                            sort = playlistSort,
-                            sortOrder = playlistSortOrder,
-                            fallbackPlaylistTitle = context.resources.getString(R.string.unknown_album),
-                            showSinglePreview = true,
-                            onCardClick = onAlbumPlaylistSelection,
-                            onLongClick = {
-                                isInSelectionMode = true
-                                selectedPlaylists.add(it)
-                            }
-                        )
-                    } else {
-                        selectionCards(
-                            playlists = albumPlaylists.filterPlaylists(searchFieldValue),
-                            selectedPlaylists = selectedPlaylists,
-                            sort = playlistSort,
-                            sortOrder = playlistSortOrder,
-                            fallbackPlaylistTitle = context.resources.getString(R.string.unknown_album),
-                            showSinglePreview = true,
-                            onCardClick = {
-                                if (it in selectedPlaylists) {
-                                    selectedPlaylists.remove(it)
-                                } else selectedPlaylists.add(it)
-
-                                if (selectedPlaylists.isEmpty()) {
-                                    isInSelectionMode = false
-                                }
-                            }
-                        )
-                    }
+                if (!isInSelectionMode) {
+                    playlistCards(
+                        playlists = albumPlaylists.filterPlaylists(searchFieldValue),
+                        sort = playlistSort,
+                        sortOrder = playlistSortOrder,
+                        fallbackPlaylistTitle = context.resources.getString(R.string.unknown_album),
+                        showSinglePreview = true,
+                        onCardClick = onAlbumPlaylistSelection,
+                        onLongClick = {
+                            isInSelectionMode = true
+                            selectedPlaylists.add(it)
+                        }
+                    )
                 } else {
-                    if (!isInSelectionMode) {
-                        playlistRows(
-                            playlists = albumPlaylists.filterPlaylists(searchFieldValue),
-                            sort = playlistSort,
-                            sortOrder = playlistSortOrder,
-                            fallbackPlaylistTitle = context.resources.getString(R.string.unknown_album),
-                            showSinglePreview = true,
-                            onRowClick = onAlbumPlaylistSelection,
-                            onLongClick = {
-                                isInSelectionMode = true
-                                selectedPlaylists.add(it)
-                            }
-                        )
-                    } else {
-                        selectionRows(
-                            playlists = albumPlaylists.filterPlaylists(searchFieldValue),
-                            selectedPlaylists = selectedPlaylists,
-                            sort = playlistSort,
-                            sortOrder = playlistSortOrder,
-                            fallbackPlaylistTitle = context.resources.getString(R.string.unknown_album),
-                            showSinglePreview = true,
-                            onRowClick = {
-                                if (it in selectedPlaylists) {
-                                    selectedPlaylists.remove(it)
-                                } else selectedPlaylists.add(it)
+                    selectionCards(
+                        playlists = albumPlaylists.filterPlaylists(searchFieldValue),
+                        selectedPlaylists = selectedPlaylists,
+                        sort = playlistSort,
+                        sortOrder = playlistSortOrder,
+                        fallbackPlaylistTitle = context.resources.getString(R.string.unknown_album),
+                        showSinglePreview = true,
+                        onCardClick = {
+                            if (it in selectedPlaylists) {
+                                selectedPlaylists.remove(it)
+                            } else selectedPlaylists.add(it)
 
-                                if (selectedPlaylists.isEmpty()) {
-                                    isInSelectionMode = false
-                                }
+                            if (selectedPlaylists.isEmpty()) {
+                                isInSelectionMode = false
                             }
-                        )
-                    }
+                        }
+                    )
                 }
             }
 
             Tab.Artists -> {
-                if (gridPlaylists) {
-                    if (!isInSelectionMode) {
-                        playlistCards(
-                            playlists = artistPlaylists.filterPlaylists(searchFieldValue),
-                            sort = playlistSort,
-                            sortOrder = playlistSortOrder,
-                            fallbackPlaylistTitle = context.resources.getString(R.string.unknown_artist),
-                            onCardClick = onArtistPlaylistSelection,
-                            onLongClick = {
-                                isInSelectionMode = true
-                                selectedPlaylists.add(it)
-                            }
-                        )
-                    } else {
-                        selectionCards(
-                            playlists = artistPlaylists.filterPlaylists(searchFieldValue),
-                            selectedPlaylists = selectedPlaylists,
-                            sort = playlistSort,
-                            sortOrder = playlistSortOrder,
-                            fallbackPlaylistTitle = context.resources.getString(R.string.unknown_artist),
-                            onCardClick = {
-                                if (it in selectedPlaylists) {
-                                    selectedPlaylists.remove(it)
-                                } else selectedPlaylists.add(it)
-
-                                if (selectedPlaylists.isEmpty()) {
-                                    isInSelectionMode = false
-                                }
-                            }
-                        )
-                    }
+                if (!isInSelectionMode) {
+                    playlistCards(
+                        playlists = artistPlaylists.filterPlaylists(searchFieldValue),
+                        sort = playlistSort,
+                        sortOrder = playlistSortOrder,
+                        fallbackPlaylistTitle = context.resources.getString(R.string.unknown_artist),
+                        onCardClick = onArtistPlaylistSelection,
+                        onLongClick = {
+                            isInSelectionMode = true
+                            selectedPlaylists.add(it)
+                        }
+                    )
                 } else {
-                    if (!isInSelectionMode) {
-                        playlistRows(
-                            playlists = artistPlaylists.filterPlaylists(searchFieldValue),
-                            sort = playlistSort,
-                            sortOrder = playlistSortOrder,
-                            fallbackPlaylistTitle = context.resources.getString(R.string.unknown_artist),
-                            onRowClick = onArtistPlaylistSelection,
-                            onLongClick = {
-                                isInSelectionMode = true
-                                selectedPlaylists.add(it)
-                            }
-                        )
-                    } else {
-                        selectionRows(
-                            playlists = artistPlaylists.filterPlaylists(searchFieldValue),
-                            selectedPlaylists = selectedPlaylists,
-                            sort = playlistSort,
-                            sortOrder = playlistSortOrder,
-                            fallbackPlaylistTitle = context.resources.getString(R.string.unknown_artist),
-                            onRowClick = {
-                                if (it in selectedPlaylists) {
-                                    selectedPlaylists.remove(it)
-                                } else selectedPlaylists.add(it)
+                    selectionCards(
+                        playlists = artistPlaylists.filterPlaylists(searchFieldValue),
+                        selectedPlaylists = selectedPlaylists,
+                        sort = playlistSort,
+                        sortOrder = playlistSortOrder,
+                        fallbackPlaylistTitle = context.resources.getString(R.string.unknown_artist),
+                        onCardClick = {
+                            if (it in selectedPlaylists) {
+                                selectedPlaylists.remove(it)
+                            } else selectedPlaylists.add(it)
 
-                                if (selectedPlaylists.isEmpty()) {
-                                    isInSelectionMode = false
-                                }
+                            if (selectedPlaylists.isEmpty()) {
+                                isInSelectionMode = false
                             }
-                        )
-                    }
+                        }
+                    )
                 }
             }
         }

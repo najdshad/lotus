@@ -23,10 +23,8 @@ import androidx.compose.material.icons.automirrored.rounded.PlaylistPlay
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.ColorLens
 import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Radar
-import androidx.compose.material.icons.rounded.TableChart
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -60,7 +58,7 @@ fun SettingsSheet(
     onPlaylistPick: () -> Unit,
     onScanFoldersClick: () -> Unit,
     onCloseClick: () -> Unit,
-    dominantColorState: DominantColorState<ImageBitmap>,
+    dominantColorState: DominantColorState<ImageBitmap>?,
     modifier: Modifier = Modifier
 ) {
     AnimatedVisibility(
@@ -165,14 +163,6 @@ fun SettingsSheet(
                                     }
                                 ),
                                 SettingsItem(
-                                    title = context.resources.getString(R.string.tabs),
-                                    supportingText = context.resources.getString(R.string.tabs_supporting_text),
-                                    icon = Icons.Rounded.TableChart,
-                                    onClick = {
-                                        navController.navigate(SettingsRoutes.Tabs)
-                                    }
-                                ),
-                                SettingsItem(
                                     title = context.resources.getString(R.string.playlists),
                                     supportingText = context.resources.getString(R.string.playlists_supporting_text),
                                     icon = Icons.AutoMirrored.Rounded.PlaylistPlay,
@@ -186,14 +176,6 @@ fun SettingsSheet(
                                     icon = Icons.Rounded.ColorLens,
                                     onClick = {
                                         navController.navigate(SettingsRoutes.Theme)
-                                    }
-                                ),
-                                SettingsItem(
-                                    title = context.resources.getString(R.string.lyrics),
-                                    supportingText = context.resources.getString(R.string.lyrics_supporting_text),
-                                    icon = Icons.Rounded.Lyrics,
-                                    onClick = {
-                                        navController.navigate(SettingsRoutes.Lyrics)
                                     }
                                 )
                             )
@@ -242,16 +224,6 @@ fun SettingsSheet(
                     )
                 }
 
-                composable<SettingsRoutes.Tabs> {
-                    TabsSettings(
-                        settings = state.settings,
-                        onBackClick = {
-                            navController.navigateUp()
-                        },
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-
                 composable<SettingsRoutes.Playlists> {
                     PlaylistsSettings(
                         settings = state.settings,
@@ -270,16 +242,6 @@ fun SettingsSheet(
                             navController.navigateUp()
                         },
                         dominantColorState = dominantColorState,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-
-                composable<SettingsRoutes.Lyrics> {
-                    LyricsSettings(
-                        settings = state.settings,
-                        onBackClick = {
-                            navController.navigateUp()
-                        },
                         modifier = Modifier.fillMaxSize()
                     )
                 }
@@ -309,16 +271,10 @@ sealed interface SettingsRoutes {
     data object MusicScan : SettingsRoutes
 
     @Serializable
-    data object Tabs : SettingsRoutes
-
-    @Serializable
     data object Playlists : SettingsRoutes
 
     @Serializable
     data object Theme : SettingsRoutes
-
-    @Serializable
-    data object Lyrics : SettingsRoutes
 
     @Serializable
     data object About : SettingsRoutes

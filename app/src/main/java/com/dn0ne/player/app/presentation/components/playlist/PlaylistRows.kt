@@ -29,8 +29,6 @@ import com.dn0ne.player.app.domain.sort.sortedBy
 import com.dn0ne.player.app.domain.track.Playlist
 import com.dn0ne.player.app.presentation.components.CoverArt
 import com.dn0ne.player.app.presentation.components.NothingYet
-import com.kmpalette.rememberDominantColorState
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
 fun LazyGridScope.playlistRows(
@@ -90,8 +88,6 @@ fun PlaylistRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        val dominantColorState = rememberDominantColorState()
-        val coroutineScope = rememberCoroutineScope()
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -102,13 +98,7 @@ fun PlaylistRow(
                 if (coverArtPreviewUris.size <= 1) {
                     CoverArt(
                         uri = coverArtPreviewUris.firstOrNull() ?: Uri.EMPTY,
-                        onCoverArtLoaded = { bitmap ->
-                            bitmap?.let {
-                                coroutineScope.launch {
-                                    dominantColorState.updateFrom(it)
-                                }
-                            }
-                        },
+                        onCoverArtLoaded = null,
                         modifier = Modifier
                             .size(60.dp)
                             .clip(ShapeDefaults.Small)
@@ -136,8 +126,8 @@ fun PlaylistRow(
 
         TrackCountBubble(
             trackCount = trackCount,
-            contentColor = dominantColorState.onColor,
-            containerColor = dominantColorState.color
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
         )
     }
 }

@@ -22,7 +22,6 @@ import androidx.compose.material.icons.rounded.Radar
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.Storage
-import androidx.compose.material.icons.rounded.Timelapse
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -149,21 +148,6 @@ fun MusicScanSettingsContent(
             icon = Icons.Rounded.LocationSearching,
             options = scanModeOptions,
             selectedOptionIndex = if (isScanModeInclusive) 0 else 1,
-        )
-
-        var ignoreShortTracks by remember {
-            mutableStateOf(settings.ignoreShortTracks)
-        }
-        SettingSwitch(
-            title = context.resources.getString(R.string.ignore_short_tracks),
-            supportingText = context.resources.getString(R.string.ignore_short_tracks_explain),
-            icon = Icons.Rounded.Timelapse,
-            isChecked = ignoreShortTracks,
-            onCheckedChange = {
-                ignoreShortTracks = it
-                settings.ignoreShortTracks = it
-            },
-            modifier = Modifier.fillMaxWidth()
         )
 
         AnimatedContent(
