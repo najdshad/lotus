@@ -65,7 +65,7 @@
 
 ---
 
-## SECTION 1: REMOVE ENTIRE LYRICS FEATURE
+## SECTION 1: REMOVE ENTIRE LYRICS FEATURE ✅ COMPLETED
 
 ### Files to DELETE (13 files):
 ```
@@ -123,7 +123,7 @@ Presentation Layer:
 
 ---
 
-## SECTION 2: REMOVE ENTIRE METADATA EDITING FEATURE
+## SECTION 2: REMOVE ENTIRE METADATA EDITING FEATURE ✅ COMPLETED
 
 ### Files to DELETE (11 files):
 ```
@@ -148,7 +148,7 @@ Presentation Layer:
 - app/presentation/components/trackinfo/ChangesSheetState.kt
 ```
 
-### Files to MODIFY (6 files):
+### Files to MODIFY (7 files):
 
 1. **PlayerViewModel.kt** (~80 lines to remove)
    - Remove imports: MetadataProvider, MetadataWriter, Metadata, MetadataSearchResult
@@ -161,27 +161,33 @@ Presentation Layer:
    - Remove events: OnAcceptingRisksOfMetadataEditing, OnMatchDurationWhenSearchMetadataClick, OnMetadataSearchResultPick, OnOverwriteMetadataClick, OnConfirmMetadataEditClick
 
 3. **TrackInfoSheet.kt**
-   - Remove EditDropdownMenu
-   - Remove navigation routes: InfoSearch, ManualEditing
-   - Keep only TrackInfo display (read-only)
+   - Completely rewritten - read-only track info display (no editing capabilities)
 
 4. **TrackInfoSheetState.kt**
-   - Remove: `showRisksOfMetadataEditingDialog`, `infoSearchSheetState`, `manualInfoEditSheetState`, `changesSheetState`
+   - Simplified to only track: Track? and isShown: Boolean
+   - Removed all metadata editing states
 
-5. **PlayerModule.kt**
-   - Remove providers: MetadataProvider, MetadataWriter
+5. **TrackInfoRoutes.kt**
+   - Removed InfoSearch, Changes, ManualEditing routes
+   - Kept only TrackInfo route
 
-6. **MainActivity.kt**
-   - Remove: `checkMetadataWriteResult()` function
-   - Remove: pendingMetadata Channel observer
+6. **PlayerModule.kt**
+   - Removed MetadataProvider and MetadataWriter providers
+   - Removed metadata dependencies from PlayerViewModel
 
-7. **Settings.kt**
-   - Remove settings keys: `areRisksOfMetadataEditingAcceptedKey`, `matchDurationWhenSearchMetadataKey`
-   - Remove StateFlow and update functions
+7. **MainActivity.kt**
+   - Removed metadata write permission handling
+   - Removed pendingMetadata channel observer
+   - Removed checkMetadataWriteResult function
+   - Removed onCoverArtPick handling
 
-### Files to MODIFY - TrackInfoRoutes.kt:
-- Remove InfoSearch and ManualEditing routes
-- Keep only TrackInfo route
+8. **Settings.kt**
+   - Removed areRisksOfMetadataEditingAccepted setting
+   - Removed matchDurationWhenSearchMetadata setting
+
+9. **PlayerScreen.kt**
+   - Removed onCoverArtPick parameter
+   - Removed all metadata editing route parameters from TrackInfoSheet
 
 ---
 
@@ -468,48 +474,48 @@ Presentation Layer:
 After implementing all changes:
 
 1. **Build verification:**
-   ```bash
-   ./gradlew clean
-   ./gradlew assembleDebug
-   ```
+    ```bash
+    ./gradlew clean
+    ./gradlew assembleDebug
+    ```
 
 2. **Functional testing:**
-   - Test basic playback (play/pause/seek/next/prev)
-   - Test queue management (play next, add to queue, reorder)
-   - Test repeat and repeat-one modes (NO shuffle)
-   - Test background playback
-   - Test custom playlists (create/rename/delete)
-   - Test playlist import (M3U)
-   - Test all tabs: Albums, Artists, Tracks, Playlists (fixed order)
-   - Verify layouts: Grid for Albums/Artists, List for Tracks/Playlists
-   - Test scroll to top button
-   - Test locate current track button
-   - Test filter vs search mode toggle
-   - Test refresh on app launch
-   - Test scan folder configuration
-   - Test audio focus handling
-   - Test dynamic colors (Material You)
-   - Test AMOLED dark theme
-   - Test System/Light/Dark theme options
+    - Test basic playback (play/pause/seek/next/prev)
+    - Test queue management (play next, add to queue, reorder)
+    - Test repeat and repeat-one modes (NO shuffle)
+    - Test background playback
+    - Test custom playlists (create/rename/delete)
+    - Test playlist import (M3U)
+    - Test all tabs: Albums, Artists, Tracks, Playlists (fixed order)
+    - Verify layouts: Grid for Albums/Artists, List for Tracks/Playlists
+    - Test scroll to top button
+    - Test locate current track button
+    - Test filter vs search mode toggle
+    - Test refresh on app launch
+    - Test scan folder configuration
+    - Test audio focus handling
+    - Test dynamic colors (Material You)
+    - Test AMOLED dark theme
+    - Test System/Light/Dark theme options
 
 3. **Verify removed features are NOT present:**
-   - No lyrics button or sheet
-   - No metadata editing options
-   - No Genres or Folders tabs
-   - No shuffle button or mode
-   - No equalizer in settings
-   - No sleep timer
-   - No tab reordering
-   - No default tab setting
-   - No grid/list toggle for playlists/tracks
-   - No ignore short tracks setting
-   - No language options (English only)
-   - No album art color theming options
+    - No lyrics button or sheet
+    - No metadata editing options
+    - No Genres or Folders tabs
+    - No shuffle button or mode
+    - No equalizer in settings
+    - No sleep timer
+    - No tab reordering
+    - No default tab setting
+    - No grid/list toggle for playlists/tracks
+    - No ignore short tracks setting
+    - No language options (English only)
+    - No album art color theming options
 
 4. **Check for compilation errors:**
-   - Fix any remaining imports
-   - Fix any remaining references to removed classes
-   - Run linting: `./gradlew lint`
+    - Fix any remaining imports
+    - Fix any remaining references to removed classes
+    - Run linting: `./gradlew lint`
 
 ---
 
