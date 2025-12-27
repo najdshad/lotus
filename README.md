@@ -24,10 +24,9 @@
 
 ## Features
 - Enjoy your favorite music in a variety of formats, including MP3, FLAC, OGG, WAV, and more
-- Easily browse tracks, albums, artists, and genres, and create custom playlists
-- Enhance your listening experience with synchronized lyrics from [LRCLIB](https://lrclib.net/)
-- Manually update track details or fetch accurate info from [MusicBrainz](https://musicbrainz.org/)
+- Easily browse tracks, albums, artists, and create custom playlists
 - Designed with [Material You](https://m3.material.io/) and supports dynamic color palettes
+- Supports AMOLED dark theme
 
 ## Download
 Latest stable version is available on [GitHub releases](https://github.com/dn0ne/lotus/releases/latest)
@@ -59,15 +58,7 @@ That's it! The app should now be running.
 ## Credits
 Some UI elements are inspired by [Vanilla](https://github.com/vanilla-music/vanilla)
 
-Lyrics UI is inspired by [Beautiful Lyrics](https://github.com/surfbryce/beautiful-lyrics)
-
-[MaterialKolor](https://github.com/jordond/materialkolor)
-
-[kmpalette](https://github.com/jordond/kmpalette)
-
 [Reorderable](https://github.com/Calvin-LL/Reorderable)
-
-[jaudiotagger](https://bitbucket.org/ijabz/jaudiotagger/src/master/)
 
 ## License
 Lotus is licensed under [GPLv3](LICENSE.md)
