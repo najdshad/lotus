@@ -394,18 +394,18 @@ class PlayerViewModel(
             }
 
             OnPlaybackModeClick -> {
-                val newPlaybackMode = _playbackState.value.playbackMode.let {
-                    PlaybackMode.entries.nextAfterOrNull(it.ordinal)
+                val currentMode = _playbackState.value.playbackMode
+                val newMode = when (currentMode) {
+                    PlaybackMode.Repeat -> PlaybackMode.RepeatOne
+                    PlaybackMode.RepeatOne -> PlaybackMode.Repeat
                 }
-                newPlaybackMode?.let { mode ->
-                    setPlayerPlaybackMode(mode)
-                    _playbackState.update {
-                        it.copy(
-                            playbackMode = mode
-                        )
-                    }
-                    savedPlayerState.playbackMode = mode
+                setPlayerPlaybackMode(newMode)
+                _playbackState.update {
+                    it.copy(
+                        playbackMode = newMode
+                    )
                 }
+                savedPlayerState.playbackMode = newMode
             }
 
             is OnPlayerExpandedChange -> {
@@ -432,6 +432,69 @@ class PlayerViewModel(
                                 }
                             )
                         )
+                    }
+                }
+            }
+
+            is OnAddToQueueClick -> {
+                player?.let { player ->
+                    val currentPlaylist = _playbackState.value.playlist ?: return@let
+                    player.addMediaItems(event.tracks.fastMap { it.mediaItem })
+
+                    _playbackState.update {
+                        it.copy(
+                            playlist = currentPlaylist.copy(
+                                trackList = currentPlaylist.trackList + event.tracks
+                            )
+                        )
+                    }
+                }
+            }
+
+            is OnReorderingQueue -> {
+                player?.let { player ->
+                    if (event.from == event.to) return@let
+
+                    player.moveMediaItem(event.from, event.to)
+
+                    val currentState = _playbackState.value
+                    val currentPlaylist = currentState.playlist ?: return@let
+                    val tracks = currentPlaylist.trackList.toMutableList()
+                    val track = tracks.removeAt(event.from)
+                    tracks.add(event.to, track)
+
+                    _playbackState.update {
+                        currentState.copy(
+                            playlist = currentPlaylist.copy(trackList = tracks)
+                        )
+                    }
+                }
+            }
+
+            is OnPlayNextClick -> {
+                player?.let { player ->
+                    val currentIndex = player.currentMediaItemIndex
+                    player.addMediaItem(currentIndex + 1, event.track.mediaItem)
+
+                    val currentState = _playbackState.value
+                    val currentPlaylist = currentState.playlist ?: return@let
+                    val tracks = currentPlaylist.trackList.toMutableList()
+                    tracks.add(currentIndex + 1, event.track)
+
+                    _playbackState.update {
+                        currentState.copy(
+                            playlist = currentPlaylist.copy(trackList = tracks)
+                        )
+                    }
+                }
+            }
+
+            is OnViewTrackInfoClick -> {
+                _trackInfoSheetState.update {
+                    it.copy(
+                        isShown = true,
+                        track = event.track
+                    )
                 }
             }
 

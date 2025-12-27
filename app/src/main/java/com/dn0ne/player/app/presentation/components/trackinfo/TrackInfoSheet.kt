@@ -31,7 +31,8 @@ import androidx.compose.material3.ShapeDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,9 +73,8 @@ fun TrackInfoSheet(
                 )
         ) {
             val context = LocalContext.current
-            var collapseFraction by remember {
-                mutableFloatStateOf(0f)
-            }
+            val collapseFractionState = remember { mutableStateOf(0f) }
+            var collapseFraction by collapseFractionState
 
             ColumnWithCollapsibleTopBar(
                 topBarContent = {
