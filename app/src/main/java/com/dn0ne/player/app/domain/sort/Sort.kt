@@ -8,7 +8,7 @@ enum class SortOrder {
 }
 
 enum class TrackSort {
-    Title, Album, Artist, Genre, Year, TrackNumber, DateModified
+    Title, Album, Artist, Genre, Year, DateModified
 }
 
 fun List<Track>.sortedBy(sort: TrackSort, order: SortOrder): List<Track> {
@@ -20,11 +20,6 @@ fun List<Track>.sortedBy(sort: TrackSort, order: SortOrder): List<Track> {
                 TrackSort.Artist -> sortedBy { it.artist }
                 TrackSort.Genre -> sortedBy { it.genre?.take(10) }
                 TrackSort.Year -> sortedBy { it.year }
-                TrackSort.TrackNumber -> sortedBy {
-                    if (it.trackNumber?.any { it.isLetter() } == true) {
-                        it.trackNumber.map { it.code }.joinToString("").toIntOrNull()
-                    } else it.trackNumber?.toIntOrNull()
-                }
                 TrackSort.DateModified -> sortedBy { it.dateModified }
             }
         }
@@ -36,11 +31,6 @@ fun List<Track>.sortedBy(sort: TrackSort, order: SortOrder): List<Track> {
                 TrackSort.Artist -> sortedByDescending { it.artist }
                 TrackSort.Genre -> sortedByDescending { it.genre?.take(10) }
                 TrackSort.Year -> sortedByDescending { it.year }
-                TrackSort.TrackNumber -> sortedByDescending {
-                    if (it.trackNumber?.any { it.isLetter() } == true) {
-                        it.trackNumber.map { it.code }.joinToString("").toIntOrNull()
-                    } else it.trackNumber?.toIntOrNull()
-                }
                 TrackSort.DateModified -> sortedByDescending { it.dateModified }
             }
         }
@@ -48,7 +38,7 @@ fun List<Track>.sortedBy(sort: TrackSort, order: SortOrder): List<Track> {
 }
 
 enum class PlaylistSort {
-    Title, TrackCount
+    Title, TrackCount, Artist, Date
 }
 
 fun List<Playlist>.sortedBy(
@@ -60,12 +50,16 @@ fun List<Playlist>.sortedBy(
             when(sort) {
                 PlaylistSort.Title -> sortedBy { it.name }
                 PlaylistSort.TrackCount -> sortedBy { it.trackList.size }
+                PlaylistSort.Artist -> sortedBy { it.trackList.firstOrNull()?.artist }
+                PlaylistSort.Date -> sortedBy { it.trackList.firstOrNull()?.dateModified }
             }
         }
         SortOrder.Descending -> {
             when(sort) {
                 PlaylistSort.Title -> sortedByDescending { it.name }
                 PlaylistSort.TrackCount -> sortedByDescending { it.trackList.size }
+                PlaylistSort.Artist -> sortedByDescending { it.trackList.firstOrNull()?.artist }
+                PlaylistSort.Date -> sortedByDescending { it.trackList.firstOrNull()?.dateModified }
             }
         }
     }

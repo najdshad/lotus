@@ -17,8 +17,12 @@ import com.dn0ne.player.app.data.repository.TrackRepository
 import com.dn0ne.player.app.domain.playback.PlaybackMode
 import com.dn0ne.player.app.domain.result.DataError
 import com.dn0ne.player.app.domain.result.Result
+import com.dn0ne.player.app.domain.sort.PlaylistSort
+import com.dn0ne.player.app.domain.sort.SortOrder
+import com.dn0ne.player.app.domain.sort.TrackSort
 import com.dn0ne.player.app.domain.sort.sortedBy
 import com.dn0ne.player.app.domain.track.Playlist
+import com.dn0ne.player.app.domain.track.format
 import com.dn0ne.player.app.domain.track.Track
 import com.dn0ne.player.app.domain.track.format
 import com.dn0ne.player.app.presentation.PlayerScreenEvent.*
@@ -138,6 +142,9 @@ class PlayerViewModel(
         started = SharingStarted.WhileSubscribed(5000L),
         initialValue = null
     )
+
+    private val _isViewingAlbum = MutableStateFlow(false)
+    val isViewingAlbum = _isViewingAlbum
 
     private val _playbackState = MutableStateFlow(PlaybackState())
     val playbackState = _playbackState
@@ -397,7 +404,8 @@ class PlayerViewModel(
                 val currentMode = _playbackState.value.playbackMode
                 val newMode = when (currentMode) {
                     PlaybackMode.Repeat -> PlaybackMode.RepeatOne
-                    PlaybackMode.RepeatOne -> PlaybackMode.Repeat
+                    PlaybackMode.RepeatOne -> PlaybackMode.OneShot
+                    PlaybackMode.OneShot -> PlaybackMode.Repeat
                 }
                 setPlayerPlaybackMode(newMode)
                 _playbackState.update {
@@ -522,10 +530,18 @@ class PlayerViewModel(
                 }
             }
 
+            is OnAlbumSelection -> {
+                _selectedPlaylist.update {
+                    event.playlist
+                }
+                _isViewingAlbum.update { true }
+            }
+
             is OnPlaylistSelection -> {
                 _selectedPlaylist.update {
                     event.playlist
                 }
+                _isViewingAlbum.update { false }
             }
 
             is OnTrackSortChange -> {
@@ -732,6 +748,10 @@ class PlayerViewModel(
 
             PlaybackMode.RepeatOne -> {
                 player?.repeatMode = Player.REPEAT_MODE_ONE
+            }
+
+            PlaybackMode.OneShot -> {
+                player?.repeatMode = Player.REPEAT_MODE_OFF
             }
         }
     }

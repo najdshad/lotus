@@ -240,216 +240,6 @@ fun PlayerScreen(
                         LaunchedEffect(shouldShowLocateButton) {
                             showLocateButton = shouldShowLocateButton
                         }
-
-                        val isScrolledEnough by remember {
-                            derivedStateOf {
-                                gridState.firstVisibleItemIndex >= 5
-                            }
-                        }
-                        onScrollToTopClick = {
-                            gridState.scrollToItem(5)
-                            gridState.animateScrollToItem(0)
-                        }
-
-                        LaunchedEffect(isScrolledEnough) {
-                            showScrollToTopButton = isScrolledEnough
-                        }
-
-                        MainPlayerScreen(
-                            gridState = gridState,
-                            topBarTabs = tabs,
-                            defaultTab = Tab.Albums,
-                            onTabChange = {
-                                selectedTab = it
-                            },
-                            trackList = trackList,
-                            currentTrack = currentTrack,
-                            onTrackClick = { track, playlist ->
-                                viewModel.onEvent(
-                                    PlayerScreenEvent.OnTrackClick(
-                                        track = track,
-                                        playlist = playlist
-                                    )
-                                )
-                            },
-                            onPlayNextClick = {
-                                viewModel.onEvent(PlayerScreenEvent.OnPlayNextClick(it))
-                            },
-                            onAddToQueueClick = {
-                                viewModel.onEvent(PlayerScreenEvent.OnAddToQueueClick(it))
-                            },
-                            onAddToPlaylistClick = {
-                                showAddToOrCreatePlaylistSheet = true
-                                showCreatePlaylistOnly = false
-                                tracksToAddToPlaylist = it
-                            },
-                            onViewTrackInfoClick = {
-                                viewModel.onEvent(PlayerScreenEvent.OnViewTrackInfoClick(it))
-                            },
-                            onGoToAlbumClick = {
-                                viewModel.onEvent(PlayerScreenEvent.OnGoToAlbumClick(it))
-                                navController.popBackStack(PlayerRoutes.Main, false)
-                                navController.navigate(PlayerRoutes.Playlist)
-                            },
-                            onGoToArtistClick = {
-                                viewModel.onEvent(PlayerScreenEvent.OnGoToArtistClick(it))
-                                navController.popBackStack(PlayerRoutes.Main, false)
-                                navController.navigate(PlayerRoutes.Playlist)
-                            },
-                            playlists = playlists,
-                            albumPlaylists = albumPlaylists,
-                            artistPlaylists = artistPlaylists,
-                            trackSort = trackSort,
-                            trackSortOrder = trackSortOrder,
-                            playlistSort = playlistSort,
-                            playlistSortOrder = playlistSortOrder,
-                            onTrackSortChange = { sort, order ->
-                                viewModel.onEvent(PlayerScreenEvent.OnTrackSortChange(sort, order))
-                            },
-                            onPlaylistSortChange = { sort, order ->
-                                viewModel.onEvent(
-                                    PlayerScreenEvent.OnPlaylistSortChange(
-                                        sort,
-                                        order
-                                    )
-                                )
-                            },
-                            onPlaylistSelection = { playlist ->
-                                viewModel.onEvent(
-                                    PlayerScreenEvent.OnPlaylistSelection(
-                                        playlist.copy(
-                                            name = playlist.name
-                                                ?: context.resources.getString(R.string.unknown)
-                                        )
-                                    )
-                                )
-                                navController.navigate(PlayerRoutes.MutablePlaylist)
-                            },
-                            onAlbumPlaylistSelection = { playlist ->
-                                viewModel.onEvent(
-                                    PlayerScreenEvent.OnPlaylistSelection(
-                                        playlist.copy(
-                                            name = playlist.name
-                                                ?: context.resources.getString(R.string.unknown_album)
-                                        )
-                                    )
-                                )
-                                navController.navigate(PlayerRoutes.Playlist)
-                            },
-                            onArtistPlaylistSelection = { playlist ->
-                                viewModel.onEvent(
-                                    PlayerScreenEvent.OnPlaylistSelection(
-                                        playlist.copy(
-                                            name = playlist.name
-                                                ?: context.resources.getString(R.string.unknown_artist)
-                                        )
-                                    )
-                                )
-                                navController.navigate(PlayerRoutes.Playlist)
-                            },
-                            onSettingsClick = {
-                                viewModel.onEvent(PlayerScreenEvent.OnSettingsClick)
-                            },
-                            replaceSearchWithFilter = replaceSearchWithFilter
-                        )
-                    }
-
-                    composable<PlayerRoutes.Playlist> {
-                        val listState = rememberLazyListState()
-                        val isScrolledEnough by remember {
-                            derivedStateOf {
-                                listState.firstVisibleItemIndex >= 5
-                            }
-                        }
-                        onScrollToTopClick = {
-                            listState.scrollToItem(5)
-                            listState.animateScrollToItem(0)
-                        }
-
-                        LaunchedEffect(isScrolledEnough) {
-                            showScrollToTopButton = isScrolledEnough
-                        }
-
-                        val playlist by viewModel.selectedPlaylist.collectAsState()
-                        playlist?.let { playlist ->
-                            val shouldShowLocateButton by remember(currentTrack, playlist) {
-                                derivedStateOf {
-                                    val index = playlist.trackList.indexOf(currentTrack)
-                                    currentTrack != null &&
-                                            index >= 0 &&
-                                            listState.layoutInfo.visibleItemsInfo.fastFirstOrNull {
-                                                it.index == index
-                                            } == null
-                                }
-                            }
-                            onLocateClick = remember(currentTrack, playlist) {
-                                {
-                                    val currentTrackIndex = playlist.trackList.indexOf(currentTrack)
-                                    val preAnimateItemIndex = if (
-                                        listState.firstVisibleItemIndex < currentTrackIndex
-                                    ) {
-                                        (currentTrackIndex - 5).coerceAtLeast(0)
-                                    } else currentTrackIndex + 5
-                                    listState.scrollToItem(preAnimateItemIndex)
-                                    listState.animateScrollToItem(currentTrackIndex)
-                                }
-                            }
-                            LaunchedEffect(shouldShowLocateButton) {
-                                showLocateButton = shouldShowLocateButton
-                            }
-
-                            Playlist(
-                                listState = listState,
-                                playlist = playlist,
-                                currentTrack = currentTrack,
-                                onTrackClick = { track, playlist ->
-                                    viewModel.onEvent(
-                                        PlayerScreenEvent.OnTrackClick(
-                                            track,
-                                            playlist
-                                        )
-                                    )
-                                },
-                                onPlayNextClick = {
-                                    viewModel.onEvent(PlayerScreenEvent.OnPlayNextClick(it))
-                                },
-                                onAddToQueueClick = {
-                                    viewModel.onEvent(PlayerScreenEvent.OnAddToQueueClick(it))
-                                },
-                                onAddToPlaylistClick = {
-                                    showAddToOrCreatePlaylistSheet = true
-                                    showCreatePlaylistOnly = false
-                                    tracksToAddToPlaylist = it
-                                },
-                                onViewTrackInfoClick = {
-                                    viewModel.onEvent(PlayerScreenEvent.OnViewTrackInfoClick(it))
-                                },
-                                onGoToAlbumClick = {
-                                    viewModel.onEvent(PlayerScreenEvent.OnGoToAlbumClick(it))
-                                    navController.popBackStack(PlayerRoutes.Main, false)
-                                    navController.navigate(PlayerRoutes.Playlist)
-                                },
-                                onGoToArtistClick = {
-                                    viewModel.onEvent(PlayerScreenEvent.OnGoToArtistClick(it))
-                                    navController.popBackStack(PlayerRoutes.Main, false)
-                                    navController.navigate(PlayerRoutes.Playlist)
-                                },
-                                trackSort = trackSort,
-                                trackSortOrder = trackSortOrder,
-                                onTrackSortChange = { sort, order ->
-                                    viewModel.onEvent(
-                                        PlayerScreenEvent.OnTrackSortChange(
-                                            sort,
-                                            order
-                                        )
-                                    )
-                                },
-                                onBackClick = {
-                                    navController.navigateUp()
-                                },
-                                replaceSearchWithFilter = replaceSearchWithFilter
-                            )
-                        }
                     }
 
                     composable<PlayerRoutes.MutablePlaylist> {
@@ -1109,8 +899,8 @@ fun MainPlayerScreen(
         contentPadding = PaddingValues(horizontal = 16.dp),
         gridCells = {
             when (it) {
-                Tab.Tracks, Tab.Playlists -> GridCells.Fixed(1)
-                Tab.Albums, Tab.Artists -> GridCells.Adaptive(150.dp)
+                Tab.Tracks, Tab.Playlists, Tab.Artists -> GridCells.Fixed(1)
+                Tab.Albums -> GridCells.Adaptive(150.dp)
             }
         },
         modifier = Modifier
@@ -1209,6 +999,7 @@ fun MainPlayerScreen(
                         sortOrder = playlistSortOrder,
                         fallbackPlaylistTitle = context.resources.getString(R.string.unknown_album),
                         showSinglePreview = true,
+                        showTrackCount = false,
                         onCardClick = onAlbumPlaylistSelection,
                         onLongClick = {
                             isInSelectionMode = true

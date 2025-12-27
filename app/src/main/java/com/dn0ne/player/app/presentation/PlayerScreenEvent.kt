@@ -27,6 +27,7 @@ sealed interface PlayerScreenEvent {
     data class OnGoToArtistClick(val track: Track): PlayerScreenEvent
     data object OnCloseTrackInfoSheetClick: PlayerScreenEvent
 
+    data class OnAlbumSelection(val playlist: Playlist): PlayerScreenEvent
     data class OnPlaylistSelection(val playlist: Playlist): PlayerScreenEvent
 
     data class OnTrackSortChange(

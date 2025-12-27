@@ -116,14 +116,6 @@ fun TrackSortButton(
             )
 
             SortButton(
-                isSelected = sort == TrackSort.TrackNumber,
-                text = context.resources.getString(R.string.track_number),
-                onClick = {
-                    onSortChange(TrackSort.TrackNumber)
-                }
-            )
-
-            SortButton(
                 isSelected = sort == TrackSort.DateModified,
                 text = context.resources.getString(R.string.date_modified),
                 onClick = {
@@ -179,6 +171,22 @@ fun PlaylistSortButton(
                 text = context.resources.getString(R.string.title),
                 onClick = {
                     onSortChange(PlaylistSort.Title)
+                }
+            )
+
+            SortButton(
+                isSelected = sort == PlaylistSort.Artist,
+                text = context.resources.getString(R.string.artist),
+                onClick = {
+                    onSortChange(PlaylistSort.Artist)
+                }
+            )
+
+            SortButton(
+                isSelected = sort == PlaylistSort.Date,
+                text = context.resources.getString(R.string.date),
+                onClick = {
+                    onSortChange(PlaylistSort.Date)
                 }
             )
 

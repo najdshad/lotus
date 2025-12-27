@@ -73,7 +73,8 @@ fun Playlist(
     trackSortOrder: SortOrder,
     onTrackSortChange: (TrackSort?, SortOrder?) -> Unit,
     onBackClick: () -> Unit,
-    replaceSearchWithFilter: Boolean
+    replaceSearchWithFilter: Boolean,
+    showSortButton: Boolean = true
 ) {
     val context = LocalContext.current
 
@@ -133,6 +134,18 @@ fun Playlist(
                     .padding(horizontal = if (collapseFraction > .2f) 28.dp else 108.dp)
             )
 
+            if (!showSortButton) {
+                Text(
+                    text = context.resources.getString(R.string.tracks_count, playlist.trackList.size),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(horizontal = if (collapseFraction > .2f) 28.dp else 108.dp)
+                )
+            }
+
             AnimatedContent(
                 targetState = topBarContent,
                 label = "top-bar-search-bar-animation",
@@ -158,16 +171,18 @@ fun Playlist(
                                     )
                                 }
 
-                                TrackSortButton(
-                                    sort = trackSort,
-                                    order = trackSortOrder,
-                                    onSortChange = {
-                                        onTrackSortChange(it, null)
-                                    },
-                                    onSortOrderChange = {
-                                        onTrackSortChange(null, it)
-                                    }
-                                )
+                                if (showSortButton) {
+                                    TrackSortButton(
+                                        sort = trackSort,
+                                        order = trackSortOrder,
+                                        onSortChange = {
+                                            onTrackSortChange(it, null)
+                                        },
+                                        onSortOrderChange = {
+                                            onTrackSortChange(null, it)
+                                        }
+                                    )
+                                }
                             }
 
                             IconButton(

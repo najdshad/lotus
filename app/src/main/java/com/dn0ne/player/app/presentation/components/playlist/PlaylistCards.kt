@@ -52,6 +52,7 @@ fun LazyGridScope.playlistCards(
     onCardClick: (Playlist) -> Unit,
     onLongClick: (Playlist) -> Unit,
     showSinglePreview: Boolean = false,
+    showTrackCount: Boolean = true,
 ) {
     if (playlists.isEmpty()) {
         item(
@@ -74,6 +75,7 @@ fun LazyGridScope.playlistCards(
             coverArtPreviewUris = playlist.trackList
                 .take(if (showSinglePreview) 1 else 4)
                 .map { it.coverArtUri },
+            showTrackCount = showTrackCount,
             modifier = Modifier
                 .clip(ShapeDefaults.Large)
                 .combinedClickable(
@@ -93,6 +95,7 @@ fun PlaylistCard(
     title: String,
     trackCount: Int,
     coverArtPreviewUris: List<Uri>,
+    showTrackCount: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -109,28 +112,32 @@ fun PlaylistCard(
                         .clip(ShapeDefaults.Large)
                 )
 
-                TrackCountBubble(
-                    trackCount = trackCount,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .offset(y = (-4).dp)
-                )
+                if (showTrackCount) {
+                    TrackCountBubble(
+                        trackCount = trackCount,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .offset(y = (-4).dp)
+                    )
+                }
             } else {
                 FourArtsPreview(
                     coverArtPreviewUris = coverArtPreviewUris,
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                TrackCountBubble(
-                    trackCount = trackCount,
-                    contentColor = MaterialTheme.colorScheme.onSurface,
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .offset(y = (-4).dp)
-                )
+                if (showTrackCount) {
+                    TrackCountBubble(
+                        trackCount = trackCount,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .offset(y = (-4).dp)
+                    )
+                }
             }
         }
 

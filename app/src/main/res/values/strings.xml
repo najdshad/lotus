@@ -37,6 +37,8 @@
     <string name="size">Size</string>
     <string name="path">Path</string>
     <string name="date_modified">Date Modified</string>
+    <string name="date">Date</string>
+    <string name="tracks_count">%d Tracks</string>
 
     <string name="unknown_title">Unknown Title</string>
     <string name="unknown_album">Unknown Album</string>

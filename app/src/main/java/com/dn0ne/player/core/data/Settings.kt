@@ -103,7 +103,7 @@ class Settings(context: Context) {
     }
 
     var trackSort: TrackSort
-        get() = TrackSort.entries[sharedPreferences.getInt(trackSortKey, 0)]
+        get() = TrackSort.entries[sharedPreferences.getInt(trackSortKey, 1)]
         set(value) {
             with(sharedPreferences.edit()) {
                 putInt(trackSortKey, value.ordinal)

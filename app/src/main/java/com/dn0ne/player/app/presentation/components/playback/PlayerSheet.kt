@@ -47,7 +47,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -507,20 +509,22 @@ fun ExpandedPlayer(
                                 imageVector = when (playbackMode) {
                                     PlaybackMode.Repeat -> Icons.Rounded.Repeat
                                     PlaybackMode.RepeatOne -> Icons.Rounded.RepeatOne
+                                    PlaybackMode.OneShot -> Icons.Rounded.Close
                                 },
                                 contentDescription = context.resources.getString(R.string.playback_mode_toggle),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
 
-                        TrackMenuButton(
-                            onPlayNextClick = onPlayNextClick,
-                            onAddToQueueClick = onAddToQueueClick,
-                            onAddToPlaylistClick = onAddToPlaylistClick,
-                            onViewTrackInfoClick = onViewTrackInfoClick,
-                            onGoToAlbumClick = onGoToAlbumClick,
-                            onGoToArtistClick = onGoToArtistClick
-                        )
+                        IconButton(
+                            onClick = onAddToPlaylistClick
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.PlaylistAdd,
+                                contentDescription = context.resources.getString(R.string.add_to_playlist),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
 
@@ -545,6 +549,9 @@ fun ExpandedPlayer(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(ShapeDefaults.Large)
+                                .clickable {
+                                    onGoToAlbumClick()
+                                }
                         )
                     }
 
@@ -577,7 +584,11 @@ fun ExpandedPlayer(
                                     ?: context.resources.getString(R.string.unknown_artist),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.basicMarquee()
+                                modifier = Modifier
+                                    .clickable {
+                                        onGoToArtistClick()
+                                    }
+                                    .basicMarquee()
                             )
                         }
 
@@ -620,6 +631,9 @@ fun ExpandedPlayer(
                                 .padding(start = 28.dp)
                                 .padding(vertical = 28.dp)
                                 .clip(ShapeDefaults.ExtraLarge)
+                                .clickable {
+                                    onGoToAlbumClick()
+                                }
                         )
                     }
 
@@ -669,20 +683,22 @@ fun ExpandedPlayer(
                                         imageVector = when (playbackMode) {
                                             PlaybackMode.Repeat -> Icons.Rounded.Repeat
                                             PlaybackMode.RepeatOne -> Icons.Rounded.RepeatOne
+                                            PlaybackMode.OneShot -> Icons.Rounded.Close
                                         },
                                         contentDescription = context.resources.getString(R.string.playback_mode_toggle),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
 
-                                TrackMenuButton(
-                                    onPlayNextClick = onPlayNextClick,
-                                    onAddToQueueClick = onAddToQueueClick,
-                                    onAddToPlaylistClick = onAddToPlaylistClick,
-                                    onViewTrackInfoClick = onViewTrackInfoClick,
-                                    onGoToAlbumClick = onGoToAlbumClick,
-                                    onGoToArtistClick = onGoToArtistClick
-                                )
+                                IconButton(
+                                    onClick = onAddToPlaylistClick
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Rounded.PlaylistAdd,
+                                        contentDescription = context.resources.getString(R.string.add_to_playlist),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                         }
 
@@ -720,7 +736,11 @@ fun ExpandedPlayer(
                                             ?: context.resources.getString(R.string.unknown_artist),
                                         style = MaterialTheme.typography.headlineSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.basicMarquee()
+                                        modifier = Modifier
+                                            .clickable {
+                                                onGoToArtistClick()
+                                            }
+                                            .basicMarquee()
                                     )
                                 }
 
