@@ -35,11 +35,6 @@ import coil3.SingletonImageLoader
 import coil3.memory.MemoryCache
 import coil3.request.transitionFactory
 import coil3.transition.CrossfadeTransition
-import com.dn0ne.player.app.data.MetadataWriter
-import com.dn0ne.player.app.domain.metadata.Metadata
-import com.dn0ne.player.app.domain.result.DataError
-import com.dn0ne.player.app.domain.result.Result
-import com.dn0ne.player.app.domain.track.Track
 import com.dn0ne.player.app.presentation.PlayerScreen
 import com.dn0ne.player.app.presentation.PlayerViewModel
 import com.dn0ne.player.app.presentation.components.settings.Theme
@@ -102,34 +97,6 @@ class MainActivity : ComponentActivity() {
         val requestWritePermissionLauncher =
             registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
                 isWritePermissionGranted = isGranted
-            }
-
-        var trackToMetadataPair: Pair<Track, Metadata>? = null
-        val requestOneTimeWritePermissionLauncher =
-            registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
-                trackToMetadataPair?.let {
-                    val metadataWriter: MetadataWriter = get()
-
-                    val result = metadataWriter.writeMetadata(
-                        track = it.first,
-                        metadata = it.second,
-                        onSecurityError = { println("SECURITY EXCEPTION OCCURRED") }
-                    )
-
-                    checkMetadataWriteResult(result)
-                }
-            }
-
-        val pickedCoverArtChannel = Channel<ByteArray>()
-        val pickCoverArt =
-            registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-                uri?.let {
-                    lifecycleScope.launch {
-                        contentResolver.openInputStream(it)?.use { input ->
-                            pickedCoverArtChannel.send(input.readBytes())
-                        }
-                    }
-                }
             }
 
         var shouldScanPickedFolder = false
@@ -278,52 +245,6 @@ class MainActivity : ComponentActivity() {
                             }
 
                             val coroutineScope = rememberCoroutineScope()
-                            ObserveAsEvents(flow = viewModel.pendingMetadata) { (track, metadata) ->
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                                    trackToMetadataPair = track to metadata
-
-                                    val metadataWriter: MetadataWriter = get()
-                                    val result = metadataWriter.writeMetadata(
-                                        track = track,
-                                        metadata = metadata,
-                                        onSecurityError = { intentSender ->
-                                            requestOneTimeWritePermissionLauncher.launch(
-                                                IntentSenderRequest.Builder(intentSender).build()
-                                            )
-                                        }
-                                    )
-
-                                    checkMetadataWriteResult(result)
-                                } else {
-                                    if (!isWritePermissionGranted) {
-                                        requestWritePermissionLauncher.launch(
-                                            Manifest.permission.WRITE_EXTERNAL_STORAGE
-                                        )
-
-                                        if (!isWritePermissionGranted) {
-                                            coroutineScope.launch {
-                                                SnackbarController.sendEvent(
-                                                    SnackbarEvent(
-                                                        message = R.string.write_permission_denied
-                                                    )
-                                                )
-                                            }
-                                        }
-
-                                        return@ObserveAsEvents
-                                    }
-
-                                    val metadataWriter: MetadataWriter = get()
-                                    val result = metadataWriter.writeMetadata(
-                                        track = track,
-                                        metadata = metadata,
-                                        onSecurityError = {}
-                                    )
-
-                                    checkMetadataWriteResult(result)
-                                }
-                            }
-
                             ObserveAsEvents(pickedCoverArtChannel.receiveAsFlow()) { bytes ->
                                 viewModel.setPickedCoverArtBytes(bytes)
                             }
@@ -420,64 +341,6 @@ class MainActivity : ComponentActivity() {
 
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(intent)
-    }
-
-    private fun checkMetadataWriteResult(result: Result<Unit, DataError.Local>) {
-        lifecycleScope.launch {
-            when (result) {
-                is Result.Error -> {
-                    when (result.error) {
-                        DataError.Local.NoReadPermission -> {
-                            SnackbarController.sendEvent(
-                                SnackbarEvent(
-                                    message = R.string.no_read_permission
-                                )
-                            )
-                        }
-
-                        DataError.Local.NoWritePermission -> {
-                            SnackbarController.sendEvent(
-                                SnackbarEvent(
-                                    message = R.string.no_write_permission
-                                )
-                            )
-                        }
-
-                        DataError.Local.FailedToRead -> {
-                            SnackbarController.sendEvent(
-                                SnackbarEvent(
-                                    message = R.string.failed_to_read
-                                )
-                            )
-                        }
-
-                        DataError.Local.FailedToWrite -> {
-                            SnackbarController.sendEvent(
-                                SnackbarEvent(
-                                    message = R.string.failed_to_write
-                                )
-                            )
-                        }
-
-                        DataError.Local.Unknown -> {
-                            SnackbarController.sendEvent(
-                                SnackbarEvent(
-                                    message = R.string.unknown_error_occurred
-                                )
-                            )
-                        }
-                    }
-                }
-
-                is Result.Success -> {
-                    SnackbarController.sendEvent(
-                        SnackbarEvent(
-                            message = R.string.metadata_change_succeed
-                        )
-                    )
-                }
-            }
-        }
     }
 
     private fun getPathFromFolderUri(uri: Uri): String {

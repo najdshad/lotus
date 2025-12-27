@@ -13,10 +13,8 @@ import androidx.media3.common.Player
 import com.dn0ne.player.EqualizerController
 import com.dn0ne.player.R
 import com.dn0ne.player.app.data.SavedPlayerState
-import com.dn0ne.player.app.data.remote.metadata.MetadataProvider
 import com.dn0ne.player.app.data.repository.PlaylistRepository
 import com.dn0ne.player.app.data.repository.TrackRepository
-import com.dn0ne.player.app.domain.metadata.Metadata
 import com.dn0ne.player.app.domain.playback.PlaybackMode
 import com.dn0ne.player.app.domain.result.DataError
 import com.dn0ne.player.app.domain.result.Result
@@ -29,9 +27,6 @@ import com.dn0ne.player.app.presentation.components.playback.PlaybackState
 import com.dn0ne.player.app.presentation.components.settings.SettingsSheetState
 import com.dn0ne.player.app.presentation.components.snackbar.SnackbarController
 import com.dn0ne.player.app.presentation.components.snackbar.SnackbarEvent
-import com.dn0ne.player.app.presentation.components.trackinfo.ChangesSheetState
-import com.dn0ne.player.app.presentation.components.trackinfo.InfoSearchSheetState
-import com.dn0ne.player.app.presentation.components.trackinfo.ManualInfoEditSheetState
 import com.dn0ne.player.app.presentation.components.trackinfo.TrackInfoSheetState
 import com.dn0ne.player.core.data.MusicScanner
 import com.dn0ne.player.core.data.Settings
@@ -53,7 +48,6 @@ import kotlinx.coroutines.withContext
 class PlayerViewModel(
     private val savedPlayerState: SavedPlayerState,
     private val trackRepository: TrackRepository,
-    private val metadataProvider: MetadataProvider,
     private val playlistRepository: PlaylistRepository,
     private val unsupportedArtworkEditFormats: List<String>,
     val settings: Settings,
@@ -182,30 +176,12 @@ class PlayerViewModel(
 
     private var positionUpdateJob: Job? = null
 
-    private val _infoSearchSheetState = MutableStateFlow(InfoSearchSheetState())
-    private val _changesSheetState = MutableStateFlow(ChangesSheetState())
-    private val _manualInfoEditSheetState = MutableStateFlow(ManualInfoEditSheetState())
-    private val _trackInfoSheetState = MutableStateFlow(
-        TrackInfoSheetState(
-            showRisksOfMetadataEditingDialog = !settings.areRisksOfMetadataEditingAccepted
-        )
+    private val _trackInfoSheetState = MutableStateFlow(TrackInfoSheetState())
+    val trackInfoSheetState = _trackInfoSheetState.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000L),
+        initialValue = TrackInfoSheetState()
     )
-    val trackInfoSheetState = combine(
-        _trackInfoSheetState,
-        _infoSearchSheetState,
-        _changesSheetState,
-        _manualInfoEditSheetState
-    ) { trackInfoSheetState,
-        infoSearchSheetState,
-        changesSheetState,
-        manualInfoEditSheetState ->
-
-        trackInfoSheetState.copy(
-            infoSearchSheetState = infoSearchSheetState,
-            changesSheetState = changesSheetState,
-            manualInfoEditSheetState = manualInfoEditSheetState
-        )
-    }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000L),
@@ -486,149 +462,6 @@ class PlayerViewModel(
                                 }
                             )
                         )
-                    }
-
-                    if (_playbackState.value.playlist?.trackList?.isEmpty() == true) {
-                        _playbackState.update {
-                            it.copy(
-                                isPlayerExpanded = false
-                            )
-                        }
-                    }
-
-                    viewModelScope.launch(Dispatchers.IO) {
-                        savedPlayerState.playlist = _playbackState.value.playlist
-                    }
-                }
-            }
-
-            is OnReorderingQueue -> {
-                player?.let { player ->
-                    player.moveMediaItem(event.from, event.to)
-
-                    _playbackState.update {
-                        it.copy(
-                            playlist = it.playlist?.copy(
-                                trackList = it.playlist.trackList.toMutableList().apply {
-                                    add(event.to, removeAt(event.from))
-                                }
-                            )
-                        )
-                    }
-
-                    viewModelScope.launch(Dispatchers.IO) {
-                        savedPlayerState.playlist = _playbackState.value.playlist
-                    }
-                }
-            }
-
-            is OnPlayNextClick -> {
-                if (_playbackState.value.currentTrack == event.track) return
-
-                _playbackState.value.playlist?.let { playlist ->
-                    val trackIndex = playlist.trackList.indexOf(event.track)
-                    val currentTrackIndex = _playbackState.value.currentTrack?.let {
-                        playlist.trackList.indexOf(it)
-                    } ?: 0
-
-                    if (trackIndex >= 0) {
-                        onEvent(
-                            OnReorderingQueue(
-                                trackIndex,
-                                (currentTrackIndex).coerceAtMost(playlist.trackList.lastIndex)
-                            )
-                        )
-                        return
-                    } else {
-                        player?.let { player ->
-                            player.addMediaItem(
-                                player.currentMediaItemIndex + 1,
-                                event.track.mediaItem
-                            )
-
-                            _playbackState.update {
-                                it.copy(
-                                    playlist = playlist.copy(
-                                        trackList = playlist.trackList.toMutableList().apply {
-                                            add(currentTrackIndex + 1, event.track)
-                                        }
-                                    )
-                                )
-                            }
-                        }
-
-                    }
-                } ?: run {
-                    onEvent(
-                        OnTrackClick(
-                            track = event.track,
-                            playlist = Playlist(
-                                name = null,
-                                trackList = listOf(event.track)
-                            )
-                        )
-                    )
-                }
-
-                viewModelScope.launch(Dispatchers.IO) {
-                    savedPlayerState.playlist = _playbackState.value.playlist
-                }
-            }
-
-            is OnAddToQueueClick -> {
-                event.tracks.fastForEach { track ->
-                    if (_playbackState.value.currentTrack != track) {
-                        _playbackState.value.playlist?.let { playlist ->
-                            val trackIndex = playlist.trackList.indexOf(track)
-
-                            if (trackIndex < 0) {
-                                player?.let { player ->
-                                    player.addMediaItem(track.mediaItem)
-
-                                    _playbackState.update {
-                                        it.copy(
-                                            playlist = playlist.copy(
-                                                trackList = playlist.trackList.toMutableList()
-                                                    .apply {
-                                                        add(track)
-                                                    }
-                                            )
-                                        )
-                                    }
-                                }
-                            }
-                        } ?: run {
-                            onEvent(
-                                OnTrackClick(
-                                    track = track,
-                                    playlist = Playlist(
-                                        name = null,
-                                        trackList = listOf(track)
-                                    )
-                                )
-                            )
-                        }
-                    }
-                }
-
-                viewModelScope.launch(Dispatchers.IO) {
-                    savedPlayerState.playlist = _playbackState.value.playlist
-                }
-            }
-
-            is OnViewTrackInfoClick -> {
-                _trackInfoSheetState.update {
-                    it.copy(
-                        isShown = true,
-                        track = event.track,
-                        isCoverArtEditable = event.track.format !in unsupportedArtworkEditFormats
-                    )
-                }
-
-                _manualInfoEditSheetState.update {
-                    it.copy(
-                        pickedCoverArtBytes = null
-                    )
                 }
             }
 
@@ -654,19 +487,7 @@ class PlayerViewModel(
                         isShown = false
                     )
                 }
-            }
-
-            OnAcceptingRisksOfMetadataEditing -> {
-                settings.areRisksOfMetadataEditingAccepted = true
-                _trackInfoSheetState.update {
-                    it.copy(
-                        showRisksOfMetadataEditingDialog = false
-                    )
                 }
-            }
-
-            OnMatchDurationWhenSearchMetadataClick -> {
-                settings.matchDurationWhenSearchMetadata = !settings.matchDurationWhenSearchMetadata
             }
 
             is OnSearchInfo -> {
@@ -1061,14 +882,6 @@ class PlayerViewModel(
     fun playTrackFromUri(uri: Uri) {
         viewModelScope.launch {
             _pendingTrackUris.send(uri)
-        }
-    }
-
-    fun setPickedCoverArtBytes(bytes: ByteArray) {
-        _manualInfoEditSheetState.update {
-            it.copy(
-                pickedCoverArtBytes = bytes
-            )
         }
     }
 

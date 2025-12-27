@@ -1,11 +1,7 @@
 package com.dn0ne.player.app.di
 
 import com.dn0ne.player.EqualizerController
-import com.dn0ne.player.app.data.MetadataWriter
-import com.dn0ne.player.app.data.MetadataWriterImpl
 import com.dn0ne.player.app.data.SavedPlayerState
-import com.dn0ne.player.app.data.remote.metadata.MetadataProvider
-import com.dn0ne.player.app.data.remote.metadata.MusicBrainzMetadataProvider
 import com.dn0ne.player.app.data.repository.PlaylistJson
 import com.dn0ne.player.app.data.repository.PlaylistRepository
 import com.dn0ne.player.app.data.repository.RealmPlaylistRepository
@@ -54,17 +50,6 @@ val playerModule = module {
         }
     }
 
-    single<MetadataProvider> {
-        MusicBrainzMetadataProvider(
-            context = androidContext(),
-            client = get()
-        )
-    }
-
-    single<MetadataWriter> {
-        MetadataWriterImpl(context = androidContext())
-    }
-
     single<Realm> {
         val configuration = RealmConfiguration.create(
             schema = setOf(PlaylistJson::class)
@@ -89,9 +74,8 @@ val playerModule = module {
         PlayerViewModel(
             savedPlayerState = get(),
             trackRepository = get(),
-            metadataProvider = get(),
             playlistRepository = get(),
-            unsupportedArtworkEditFormats = get<MetadataWriter>().unsupportedArtworkEditFormats,
+            unsupportedArtworkEditFormats = emptyList(),
             settings = get(),
             musicScanner = get(),
             equalizerController = get()

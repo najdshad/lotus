@@ -26,10 +26,6 @@ class Settings(context: Context) {
     private val paletteStyleKey = "palette-style"
     private val amoledDarkThemeKey = "amoled-dark-theme"
 
-    private val areRisksOfMetadataEditingAcceptedKey = "metadata-editing-dialog"
-
-    private val matchDurationWhenSearchMetadataKey = "match-duration"
-
     private val trackSortKey = "track-sort-key"
     private val trackSortOrderKey = "track-sort-order-key"
     private val playlistSortKey = "playlist-sort-key"
@@ -135,24 +131,6 @@ class Settings(context: Context) {
             apply()
         }
     }
-
-    var areRisksOfMetadataEditingAccepted: Boolean
-        get() = sharedPreferences.getBoolean(areRisksOfMetadataEditingAcceptedKey, false)
-        set(value) {
-            with(sharedPreferences.edit()) {
-                putBoolean(areRisksOfMetadataEditingAcceptedKey, value)
-                apply()
-            }
-        }
-
-    var matchDurationWhenSearchMetadata: Boolean
-        get() = sharedPreferences.getBoolean(matchDurationWhenSearchMetadataKey, true)
-        set(value) {
-            with(sharedPreferences.edit()) {
-                putBoolean(matchDurationWhenSearchMetadataKey, value)
-                apply()
-            }
-        }
 
     var trackSort: TrackSort
         get() = TrackSort.entries[sharedPreferences.getInt(trackSortKey, 0)]

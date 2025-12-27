@@ -1,7 +1,5 @@
 package com.dn0ne.player.app.presentation
 
-import com.dn0ne.player.app.domain.metadata.Metadata
-import com.dn0ne.player.app.domain.metadata.MetadataSearchResult
 import com.dn0ne.player.app.domain.sort.PlaylistSort
 import com.dn0ne.player.app.domain.sort.SortOrder
 import com.dn0ne.player.app.domain.sort.TrackSort
@@ -28,13 +26,6 @@ sealed interface PlayerScreenEvent {
     data class OnGoToAlbumClick(val track: Track): PlayerScreenEvent
     data class OnGoToArtistClick(val track: Track): PlayerScreenEvent
     data object OnCloseTrackInfoSheetClick: PlayerScreenEvent
-    data object OnAcceptingRisksOfMetadataEditing: PlayerScreenEvent
-    data class OnSearchInfo(val query: String): PlayerScreenEvent
-    data object OnMatchDurationWhenSearchMetadataClick: PlayerScreenEvent
-    data class OnMetadataSearchResultPick(val searchResult: MetadataSearchResult): PlayerScreenEvent
-    data class OnOverwriteMetadataClick(val metadata: Metadata): PlayerScreenEvent
-    data object OnRestoreCoverArtClick: PlayerScreenEvent
-    data class OnConfirmMetadataEditClick(val metadata: Metadata): PlayerScreenEvent
 
     data class OnPlaylistSelection(val playlist: Playlist): PlayerScreenEvent
 

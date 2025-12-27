@@ -120,7 +120,6 @@ import kotlinx.serialization.Serializable
 @Composable
 fun PlayerScreen(
     viewModel: PlayerViewModel,
-    onCoverArtPick: () -> Unit,
     onFolderPick: (scan: Boolean) -> Unit,
     onPlaylistPick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -832,25 +831,6 @@ fun PlayerScreen(
                     state = trackInfoSheetState,
                     onCloseClick = {
                         viewModel.onEvent(PlayerScreenEvent.OnCloseTrackInfoSheetClick)
-                    },
-                    onSearchInfo = { query ->
-                        viewModel.onEvent(PlayerScreenEvent.OnSearchInfo(query))
-                    },
-                    onSearchResultClick = {
-                        viewModel.onEvent(PlayerScreenEvent.OnMetadataSearchResultPick(it))
-                    },
-                    onOverwriteMetadataClick = {
-                        viewModel.onEvent(PlayerScreenEvent.OnOverwriteMetadataClick(it))
-                    },
-                    onPickCoverArtClick = onCoverArtPick,
-                    onRestoreCoverArtClick = {
-                        viewModel.onEvent(PlayerScreenEvent.OnRestoreCoverArtClick)
-                    },
-                    onConfirmMetadataEditClick = {
-                        viewModel.onEvent(PlayerScreenEvent.OnConfirmMetadataEditClick(it))
-                    },
-                    onRisksOfMetadataEditingAccept = {
-                        viewModel.onEvent(PlayerScreenEvent.OnAcceptingRisksOfMetadataEditing)
                     },
                     modifier = Modifier
                         .fillMaxSize()
