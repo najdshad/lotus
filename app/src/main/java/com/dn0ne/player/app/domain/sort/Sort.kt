@@ -48,7 +48,7 @@ fun List<Track>.sortedBy(sort: TrackSort, order: SortOrder): List<Track> {
 }
 
 enum class PlaylistSort {
-    Title, TrackCount
+    Title, TrackCount, Artist, DateModified
 }
 
 fun List<Playlist>.sortedBy(
@@ -60,12 +60,16 @@ fun List<Playlist>.sortedBy(
             when(sort) {
                 PlaylistSort.Title -> sortedBy { it.name }
                 PlaylistSort.TrackCount -> sortedBy { it.trackList.size }
+                PlaylistSort.Artist -> sortedBy { it.trackList.firstOrNull()?.artist }
+                PlaylistSort.DateModified -> sortedBy { it.trackList.maxOfOrNull { it.dateModified } }
             }
         }
         SortOrder.Descending -> {
             when(sort) {
                 PlaylistSort.Title -> sortedByDescending { it.name }
                 PlaylistSort.TrackCount -> sortedByDescending { it.trackList.size }
+                PlaylistSort.Artist -> sortedByDescending { it.trackList.firstOrNull()?.artist }
+                PlaylistSort.DateModified -> sortedByDescending { it.trackList.maxOfOrNull { it.dateModified } }
             }
         }
     }

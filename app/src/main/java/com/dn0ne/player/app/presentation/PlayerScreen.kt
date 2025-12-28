@@ -283,19 +283,6 @@ fun PlayerScreen(
                                 showCreatePlaylistOnly = false
                                 tracksToAddToPlaylist = it
                             },
-                            onViewTrackInfoClick = {
-                                viewModel.onEvent(PlayerScreenEvent.OnViewTrackInfoClick(it))
-                            },
-                            onGoToAlbumClick = {
-                                viewModel.onEvent(PlayerScreenEvent.OnGoToAlbumClick(it))
-                                navController.popBackStack(PlayerRoutes.Main, false)
-                                navController.navigate(PlayerRoutes.Playlist)
-                            },
-                            onGoToArtistClick = {
-                                viewModel.onEvent(PlayerScreenEvent.OnGoToArtistClick(it))
-                                navController.popBackStack(PlayerRoutes.Main, false)
-                                navController.navigate(PlayerRoutes.Playlist)
-                            },
                             playlists = playlists,
                             albumPlaylists = albumPlaylists,
                             artistPlaylists = artistPlaylists,
@@ -781,9 +768,6 @@ fun MainPlayerScreen(
     onPlayNextClick: (Track) -> Unit,
     onAddToQueueClick: (List<Track>) -> Unit,
     onAddToPlaylistClick: (List<Track>) -> Unit,
-    onViewTrackInfoClick: (Track) -> Unit,
-    onGoToAlbumClick: (Track) -> Unit,
-    onGoToArtistClick: (Track) -> Unit,
     playlists: List<Playlist>,
     albumPlaylists: List<Playlist>,
     artistPlaylists: List<Playlist>,
@@ -1109,8 +1093,8 @@ fun MainPlayerScreen(
         contentPadding = PaddingValues(horizontal = 16.dp),
         gridCells = {
             when (it) {
-                Tab.Tracks, Tab.Playlists -> GridCells.Fixed(1)
-                Tab.Albums, Tab.Artists -> GridCells.Adaptive(150.dp)
+                Tab.Tracks, Tab.Playlists, Tab.Artists -> GridCells.Fixed(1)
+                Tab.Albums -> GridCells.Adaptive(150.dp)
             }
         },
         modifier = Modifier
@@ -1120,18 +1104,27 @@ fun MainPlayerScreen(
         when (tab) {
             Tab.Tracks -> {
                 if (!isInSelectionMode) {
-                    trackList(
-                        trackList = trackList.filterTracks(searchFieldValue),
-                        currentTrack = currentTrack,
-                        onTrackClick = {
-                            onTrackClick(
-                                it,
-                                Playlist(
-                                    name = null,
-                                    trackList = if (replaceSearchWithFilter) {
-                                        trackList.filterTracks(searchFieldValue)
-                                    } else trackList
-                                )
+            trackList(
+                trackList = playlist.trackList.filterTracks(searchFieldValue),
+                currentTrack = currentTrack,
+                onTrackClick = { track ->
+                    onTrackClick(
+                        track,
+                        if (replaceSearchWithFilter) {
+                            playlist.copy(
+                                trackList = playlist.trackList.filterTracks(searchFieldValue)
+                            )
+                        } else playlist
+                    )
+                },
+                onPlayNextClick = onPlayNextClick,
+                onAddToQueueClick = { onAddToQueueClick(listOf(it)) },
+                onAddToPlaylistClick = { onAddToPlaylistClick(listOf(it)) },
+                onLongClick = {
+                    isInSelectionMode = true
+                    selectedTracks.add(it)
+                }
+            )
                             )
                         },
                         onPlayNextClick = onPlayNextClick,
@@ -1141,9 +1134,6 @@ fun MainPlayerScreen(
                         onAddToPlaylistClick = {
                             onAddToPlaylistClick(listOf(it))
                         },
-                        onViewTrackInfoClick = onViewTrackInfoClick,
-                        onGoToAlbumClick = onGoToAlbumClick,
-                        onGoToArtistClick = onGoToArtistClick,
                         onLongClick = {
                             isInSelectionMode = true
                             selectedTracks.add(it)
@@ -1209,6 +1199,7 @@ fun MainPlayerScreen(
                         sortOrder = playlistSortOrder,
                         fallbackPlaylistTitle = context.resources.getString(R.string.unknown_album),
                         showSinglePreview = true,
+                        showTrackCount = false,
                         onCardClick = onAlbumPlaylistSelection,
                         onLongClick = {
                             isInSelectionMode = true
@@ -1223,6 +1214,7 @@ fun MainPlayerScreen(
                         sortOrder = playlistSortOrder,
                         fallbackPlaylistTitle = context.resources.getString(R.string.unknown_album),
                         showSinglePreview = true,
+                        showTrackCount = false,
                         onCardClick = {
                             if (it in selectedPlaylists) {
                                 selectedPlaylists.remove(it)
@@ -1238,25 +1230,25 @@ fun MainPlayerScreen(
 
             Tab.Artists -> {
                 if (!isInSelectionMode) {
-                    playlistCards(
+                    playlistRows(
                         playlists = artistPlaylists.filterPlaylists(searchFieldValue),
                         sort = playlistSort,
                         sortOrder = playlistSortOrder,
                         fallbackPlaylistTitle = context.resources.getString(R.string.unknown_artist),
-                        onCardClick = onArtistPlaylistSelection,
+                        onRowClick = onArtistPlaylistSelection,
                         onLongClick = {
                             isInSelectionMode = true
                             selectedPlaylists.add(it)
                         }
                     )
                 } else {
-                    selectionCards(
+                    selectionRows(
                         playlists = artistPlaylists.filterPlaylists(searchFieldValue),
                         selectedPlaylists = selectedPlaylists,
                         sort = playlistSort,
                         sortOrder = playlistSortOrder,
                         fallbackPlaylistTitle = context.resources.getString(R.string.unknown_artist),
-                        onCardClick = {
+                        onRowClick = {
                             if (it in selectedPlaylists) {
                                 selectedPlaylists.remove(it)
                             } else selectedPlaylists.add(it)

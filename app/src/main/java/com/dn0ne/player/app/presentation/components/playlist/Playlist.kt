@@ -368,9 +368,6 @@ fun Playlist(
                 onPlayNextClick = onPlayNextClick,
                 onAddToQueueClick = { onAddToQueueClick(listOf(it)) },
                 onAddToPlaylistClick = { onAddToPlaylistClick(listOf(it)) },
-                onViewTrackInfoClick = onViewTrackInfoClick,
-                onGoToAlbumClick = onGoToAlbumClick,
-                onGoToArtistClick = onGoToArtistClick,
                 onLongClick = {
                     isInSelectionMode = true
                     selectedTracks.add(it)
