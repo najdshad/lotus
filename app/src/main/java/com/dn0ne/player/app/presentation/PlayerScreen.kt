@@ -1104,27 +1104,18 @@ fun MainPlayerScreen(
         when (tab) {
             Tab.Tracks -> {
                 if (!isInSelectionMode) {
-            trackList(
-                trackList = playlist.trackList.filterTracks(searchFieldValue),
-                currentTrack = currentTrack,
-                onTrackClick = { track ->
-                    onTrackClick(
-                        track,
-                        if (replaceSearchWithFilter) {
-                            playlist.copy(
-                                trackList = playlist.trackList.filterTracks(searchFieldValue)
-                            )
-                        } else playlist
-                    )
-                },
-                onPlayNextClick = onPlayNextClick,
-                onAddToQueueClick = { onAddToQueueClick(listOf(it)) },
-                onAddToPlaylistClick = { onAddToPlaylistClick(listOf(it)) },
-                onLongClick = {
-                    isInSelectionMode = true
-                    selectedTracks.add(it)
-                }
-            )
+                    trackList(
+                        trackList = trackList.filterTracks(searchFieldValue),
+                        currentTrack = currentTrack,
+                        onTrackClick = {
+                            onTrackClick(
+                                it,
+                                Playlist(
+                                    name = null,
+                                    trackList = if (replaceSearchWithFilter) {
+                                        trackList.filterTracks(searchFieldValue)
+                                    } else trackList
+                                )
                             )
                         },
                         onPlayNextClick = onPlayNextClick,

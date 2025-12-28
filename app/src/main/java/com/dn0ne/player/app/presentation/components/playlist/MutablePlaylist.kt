@@ -465,9 +465,6 @@ fun MutablePlaylist(
                         onAddToQueueClick = { onAddToQueueClick(listOf(track)) },
                         onAddToPlaylistClick = { onAddToPlaylistClick(listOf(track)) },
                         onRemoveFromPlaylistClick = { onRemoveFromPlaylistClick(listOf(track)) },
-                        onViewTrackInfoClick = { onViewTrackInfoClick(track) },
-                        onGoToAlbumClick = { onGoToAlbumClick(track) },
-                        onGoToArtistClick = { onGoToArtistClick(track) },
                         onLongClick = {
                             isInSelectionMode = true
                             selectedTracks.add(track)

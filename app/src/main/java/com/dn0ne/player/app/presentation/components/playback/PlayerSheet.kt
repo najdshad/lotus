@@ -516,10 +516,7 @@ fun ExpandedPlayer(
                         TrackMenuButton(
                             onPlayNextClick = onPlayNextClick,
                             onAddToQueueClick = onAddToQueueClick,
-                            onAddToPlaylistClick = onAddToPlaylistClick,
-                            onViewTrackInfoClick = onViewTrackInfoClick,
-                            onGoToAlbumClick = onGoToAlbumClick,
-                            onGoToArtistClick = onGoToArtistClick
+                            onAddToPlaylistClick = onAddToPlaylistClick
                         )
                     }
                 }
@@ -678,10 +675,7 @@ fun ExpandedPlayer(
                                 TrackMenuButton(
                                     onPlayNextClick = onPlayNextClick,
                                     onAddToQueueClick = onAddToQueueClick,
-                                    onAddToPlaylistClick = onAddToPlaylistClick,
-                                    onViewTrackInfoClick = onViewTrackInfoClick,
-                                    onGoToAlbumClick = onGoToAlbumClick,
-                                    onGoToArtistClick = onGoToArtistClick
+                                    onAddToPlaylistClick = onAddToPlaylistClick
                                 )
                             }
                         }
