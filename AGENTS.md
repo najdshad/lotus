@@ -45,6 +45,8 @@ Android music player (Lotus) built with Jetpack Compose, following clean archite
 
 **Result Pattern:** Wrap operation results in `Result.Success<D, E>` or `Result.Error<D, E>` from `domain/result/`. Use `DataError.Network` or `DataError.Local` enums.
 
+**DI Modules:** Use `single { }` for singleton repositories and services. Use `viewModel { }` for ViewModels. Pass dependencies via `get()`.
+
 ## Code Style
 
 **Formatting:** Kotlin official code style (no auto-formatters configured). No unnecessary comments.
@@ -53,7 +55,15 @@ Android music player (Lotus) built with Jetpack Compose, following clean archite
 
 **File Organization:** One public type per file. Private helper functions at bottom of file.
 
-**Functions:** Prefer single-expression functions when concise. Extension functions in separate files or with clear grouping.
+**File Structure:** Follow feature-based organization under app/core modules. Each feature has data/domain/presentation subpackages.
+
+**Functions:** Prefer single-expression functions when concise. Extension functions in separate files or with clear grouping. Use extension functions for domain logic (e.g., `List<Track>.sortedBy()`).
+
+**Extension Functions:** Group related extension functions by receiver type. Place in domain layer for business logic transformations.
+
+**Performance:** Use Compose UI's fast operators for list operations: `fastFilter`, `fastMap`, `fastForEach`, `fastFirstOrNull` instead of standard Kotlin list functions.
+
+**Coroutines:** Use `viewModelScope` for coroutines in ViewModels. Use `Dispatchers.IO` for disk/network operations. Launch coroutines with `viewModelScope.launch` for async operations.
 
 ## Naming Conventions
 
@@ -72,8 +82,8 @@ Android music player (Lotus) built with Jetpack Compose, following clean archite
 
 **Nullability:** Explicit nullable types (`String?`) with null-safe calls (`?.`) and elvis operator (`?:`).
 **Sealed Interfaces:** Use for type-safe hierarchies (PlayerScreenEvent, Error, Result).
-**Data Classes:** For immutable data holders. Use `copy()` for updates.
-**@Serializable:** Mark with kotlinx.serialization for network/storage (Track, Lyrics, Playlist).
+**Data Classes:** For immutable data holders. Use `copy()` for updates. Use default values for optional fields.
+**@Serializable:** Mark with kotlinx.serialization for network/storage (Track, Lyrics, Playlist). Use custom serializers when needed (TrackSerializer).
 **ByteArray:** Prefer ByteArray over List<Byte> for binary data.
 
 **Error Handling:**
@@ -83,10 +93,15 @@ Android music player (Lotus) built with Jetpack Compose, following clean archite
 - Log errors with Log.d() for debugging
 - Check for specific error types: `when (result.error) { DataError.Network.BadRequest -> ... }`
 
+**Logging:** Use Log.d() for debug information. Tag with appropriate class/package name for filtering.
+
+**Resources:** Use R.string for all user-facing messages in SnackbarController and composables. Never hardcode strings.
+
 ## Testing
 
-**Unit Tests:** Place in `app/src/test/`. Use JUnit 4. Test pure business logic, data transformations, repository methods.
-**Instrumented Tests:** Place in `app/src/androidTest/`. Use AndroidX Test. Test UI components, database operations, MediaStore queries.
+**Unit Tests:** Place in `app/src/test/`. Use JUnit 4 with `@Test` annotation. Test pure business logic, data transformations, repository methods.
+
+**Instrumented Tests:** Place in `app/src/androidTest/`. Use AndroidX Test with `androidx.test.runner.AndroidJUnitRunner`. Test UI components, database operations, MediaStore queries.
 
 **Running Single Test:**
 
@@ -109,3 +124,11 @@ Android music player (Lotus) built with Jetpack Compose, following clean archite
 **Navigation:** Type-safe navigation with @Serializable route objects in sealed interfaces.
 **Theme:** Use Material3 components. Follow DynamicMaterialTheme for app-wide theming.
 **Lists:** Use LazyColumn/LazyGrid with rememberLazyListState/rememberLazyGridState.
+**State Classes:** Use data classes for UI state with default values (PlaybackState, SettingsSheetState, TrackInfoSheetState).
+
+**Common Patterns:**
+
+- Use `when` expressions for type-safe handling of sealed classes/interfaces (Events, Results, Enums)
+- Use `copy()` on data classes to update immutable state
+- Use Channel for one-shot events between ViewModels and UI
+- Use `receiveAsFlow()` on Channels to collect as Flow in coroutines
