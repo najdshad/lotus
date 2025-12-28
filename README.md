@@ -1,9 +1,9 @@
 <div align="center">
   <img src="fastlane/metadata/android/en-US/images/icon-fit.png" width="200px" />
 
-  # Lotus
+# Lotus
 
-  ### Music player for Android
+### Music player for Android
   
 </div>
 
@@ -23,42 +23,31 @@
 </div>
 
 ## Features
+
+- Lean fork to keep my personal use flow as smooth as possible.
 - Enjoy your favorite music in a variety of formats, including MP3, FLAC, OGG, WAV, and more
 - Easily browse tracks, albums, artists, and create custom playlists
 - Designed with [Material You](https://m3.material.io/) and supports dynamic color palettes
 - Supports AMOLED dark theme
 
-## Download
-Latest stable version is available on [GitHub releases](https://github.com/dn0ne/lotus/releases/latest)
-
-Stable releases are also available on [F-Droid](https://f-droid.org/packages/com.dn0ne.lotus)
-
-## Support
-If you enjoy using Lotus, consider [buying me a coffee](https://en.liberapay.com/dn0ne/donate)!
-
 ## Build
-1. **Get the Source Code**  
-   - Clone the repository or download the source code:
-     ```bash
-     git clone https://github.com/dn0ne/lotus.git
-     ```
 
-2. **Open project in Android Studio**  
-   - Launch Android Studio.  
-   - Select **File > Open** and navigate to the project's folder.  
-   - Click **OK** to open the project.
-
-3. **Run the project**  
-   - Wait for the project to sync and build (Gradle sync may take some time).  
-   - Ensure a device or emulator is connected.  
-   - Click the **Run** button or press `Shift + F10` to build and launch the app.  
-
-That's it! The app should now be running. 
+```bash
+./gradlew assembleDebug           # Build debug APK
+./gradlew assembleRelease         # Build release APK
+./gradlew clean                   # Clean build artifacts
+adb install app/build/outputs/apk/debug/app-debug.apk    # Install debug APK
+adb install app/build/outputs/apk/release/app-release.apk  # Install release APK
+```
 
 ## Credits
+
 Some UI elements are inspired by [Vanilla](https://github.com/vanilla-music/vanilla)
 
 [Reorderable](https://github.com/Calvin-LL/Reorderable)
 
+Most of this fork is built using AI assisted tools.
+
 ## License
+
 Lotus is licensed under [GPLv3](LICENSE.md)

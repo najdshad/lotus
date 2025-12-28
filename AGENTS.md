@@ -7,6 +7,7 @@
 ## Build & Test Commands
 
 **Build:**
+
 ```bash
 ./gradlew assembleDebug           # Build debug APK
 ./gradlew assembleRelease         # Build release APK
@@ -14,6 +15,7 @@
 ```
 
 **Tests:**
+
 ```bash
 ./gradlew test                    # Run unit tests
 ./gradlew connectedAndroidTest     # Run instrumented tests on connected device
@@ -24,6 +26,7 @@
 ## Project Overview
 
 Android music player (Lotus) built with Jetpack Compose, following clean architecture.
+
 - **UI:** Jetpack Compose with Material3, Navigation, and dynamic theming
 - **DI:** Koin for dependency injection
 - **Media:** Media3 Exoplayer for audio playback
@@ -74,6 +77,7 @@ Android music player (Lotus) built with Jetpack Compose, following clean archite
 **ByteArray:** Prefer ByteArray over List<Byte> for binary data.
 
 **Error Handling:**
+
 - Never throw exceptions across layers - wrap in Result.Error
 - Use SnackbarController to show user-facing error messages via string resources
 - Log errors with Log.d() for debugging
@@ -85,6 +89,7 @@ Android music player (Lotus) built with Jetpack Compose, following clean archite
 **Instrumented Tests:** Place in `app/src/androidTest/`. Use AndroidX Test. Test UI components, database operations, MediaStore queries.
 
 **Running Single Test:**
+
 ```bash
 # Unit test class
 ./gradlew test --tests "*PlayerViewModelTest"
