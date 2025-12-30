@@ -183,10 +183,10 @@ fun PlaylistSortButton(
             )
 
             SortButton(
-                isSelected = sort == PlaylistSort.DateModified,
-                text = context.resources.getString(R.string.date_modified),
+                isSelected = sort == PlaylistSort.Year,
+                text = context.resources.getString(R.string.year),
                 onClick = {
-                    onSortChange(PlaylistSort.DateModified)
+                    onSortChange(PlaylistSort.Year)
                 }
             )
 

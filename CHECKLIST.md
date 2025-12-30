@@ -2,7 +2,7 @@
 
 ## Albums Tab
 - [x] Remove element showing number of tracks inside album
-- [x] Update album sort options to: title, artist, date
+- [x] Update album sort options to: title, artist, year (release date)
 
 ## Artists Tab
 - [x] Force only list view (remove grid view)
