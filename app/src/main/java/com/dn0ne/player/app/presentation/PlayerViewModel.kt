@@ -404,7 +404,8 @@ class PlayerViewModel(
                 val currentMode = _playbackState.value.playbackMode
                 val newMode = when (currentMode) {
                     PlaybackMode.Repeat -> PlaybackMode.RepeatOne
-                    PlaybackMode.RepeatOne -> PlaybackMode.Repeat
+                    PlaybackMode.RepeatOne -> PlaybackMode.PlayQueueOnce
+                    PlaybackMode.PlayQueueOnce -> PlaybackMode.Repeat
                 }
                 setPlayerPlaybackMode(newMode)
                 _playbackState.update {
@@ -742,6 +743,10 @@ class PlayerViewModel(
 
             PlaybackMode.RepeatOne -> {
                 player?.repeatMode = Player.REPEAT_MODE_ONE
+            }
+
+            PlaybackMode.PlayQueueOnce -> {
+                player?.repeatMode = Player.REPEAT_MODE_OFF
             }
         }
     }

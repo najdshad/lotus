@@ -16,10 +16,10 @@
 - [x] Add formatted "X Tracks" string under album name
 
 ## Now Playing
-- [ ] Remove 3 dot menu, replace with "Add to playlist" option
-- [ ] Make artist name clickable to navigate to artist page
-- [ ] Make album cover clickable to navigate to album page
-- [ ] Add "one-shot whole queue" option (play queue once)
+- [x] Remove 3 dot menu, replace with "Add to playlist" option
+- [x] Make artist name clickable to navigate to artist page
+- [x] Make album cover clickable to navigate to album page
+- [x] Add "one-shot whole queue" option (play queue once)
 
 ## Settings - Theme
 - [ ] Fix light mode theme
