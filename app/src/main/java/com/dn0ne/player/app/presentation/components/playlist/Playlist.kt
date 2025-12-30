@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.lerp
 import com.dn0ne.player.R
 import com.dn0ne.player.app.domain.sort.SortOrder
 import com.dn0ne.player.app.domain.sort.TrackSort
+import com.dn0ne.player.app.domain.sort.sortedBy
 import com.dn0ne.player.app.domain.track.Playlist
 import com.dn0ne.player.app.domain.track.Track
 import com.dn0ne.player.app.domain.track.filterTracks
@@ -93,6 +94,15 @@ fun Playlist(
     }
     var showSearchField by rememberSaveable {
         mutableStateOf(false)
+    }
+
+    val sortedTrackList = remember(showTrackCount, trackSort, trackSortOrder, playlist, searchFieldValue) {
+        val filtered = playlist.trackList.filterTracks(searchFieldValue)
+        if (showTrackCount) {
+            filtered.sortedBy(TrackSort.TrackNumber, SortOrder.Ascending)
+        } else {
+            filtered.sortedBy(trackSort, trackSortOrder)
+        }
     }
 
     var isInSelectionMode by remember {
@@ -301,11 +311,11 @@ fun Playlist(
                             }
 
                             Row {
-                                if (selectedTracks.size < playlist.trackList.size) {
+                                if (selectedTracks.size < sortedTrackList.size) {
                                     IconButton(
                                         onClick = {
                                             selectedTracks.clear()
-                                            selectedTracks.addAll(playlist.trackList)
+                                            selectedTracks.addAll(sortedTrackList)
                                         }
                                     ) {
                                         Icon(
@@ -371,14 +381,14 @@ fun Playlist(
     ) {
         if (!isInSelectionMode) {
             trackList(
-                trackList = playlist.trackList.filterTracks(searchFieldValue),
+                trackList = sortedTrackList,
                 currentTrack = currentTrack,
                 onTrackClick = { track ->
                     onTrackClick(
                         track,
                         if (replaceSearchWithFilter) {
                             playlist.copy(
-                                trackList = playlist.trackList.filterTracks(searchFieldValue)
+                                trackList = sortedTrackList
                             )
                         } else playlist
                     )
@@ -393,7 +403,7 @@ fun Playlist(
             )
         } else {
             selectionList(
-                trackList = playlist.trackList.filterTracks(searchFieldValue),
+                trackList = sortedTrackList,
                 selectedTracks = selectedTracks,
                 onTrackClick = {
                     if (it in selectedTracks) {
