@@ -18,8 +18,8 @@ android {
         applicationId = "com.dn0ne.lotus"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1_003_001
-        versionName = "1.3.1"
+        versionCode = 1_003_002
+        versionName = "1.3.2"
 
         if (splitApks) {
             splits {

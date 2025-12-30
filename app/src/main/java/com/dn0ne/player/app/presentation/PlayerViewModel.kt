@@ -17,6 +17,8 @@ import com.dn0ne.player.app.data.repository.TrackRepository
 import com.dn0ne.player.app.domain.playback.PlaybackMode
 import com.dn0ne.player.app.domain.result.DataError
 import com.dn0ne.player.app.domain.result.Result
+import com.dn0ne.player.app.domain.sort.SortOrder
+import com.dn0ne.player.app.domain.sort.TrackSort
 import com.dn0ne.player.app.domain.sort.sortedBy
 import com.dn0ne.player.app.domain.track.Playlist
 import com.dn0ne.player.app.domain.track.Track
@@ -105,7 +107,7 @@ class PlayerViewModel(
         it.groupBy { it.album }.entries.map {
             Playlist(
                 name = it.key,
-                trackList = it.value
+                trackList = it.value.sortedBy(TrackSort.TrackNumber, SortOrder.Ascending)
             )
         }
     }.stateIn(
@@ -117,7 +119,7 @@ class PlayerViewModel(
         it.groupBy { it.artist }.entries.map {
             Playlist(
                 name = it.key,
-                trackList = it.value
+                trackList = it.value.sortedBy(TrackSort.TrackNumber, SortOrder.Ascending)
             )
         }
     }.stateIn(
@@ -627,7 +629,10 @@ class PlayerViewModel(
 
             is OnAddToPlaylist -> {
                 viewModelScope.launch {
-                    if (event.playlist.trackList.any { it in event.tracks }) {
+                    val existingTracks = event.playlist.trackList
+                    val newTracksNotInList = event.tracks.filter { it !in existingTracks }
+
+                    if (newTracksNotInList.isEmpty() && event.tracks.any { it in existingTracks }) {
                         SnackbarController.sendEvent(
                             SnackbarEvent(
                                 message = R.string.track_is_already_on_playlist
@@ -635,8 +640,7 @@ class PlayerViewModel(
                         )
                     }
 
-                    val newTrackList =
-                        (event.playlist.trackList.toMutableSet() + event.tracks).toList()
+                    val newTrackList = existingTracks + newTracksNotInList
                     playlistRepository.updatePlaylistTrackList(
                         playlist = event.playlist,
                         trackList = newTrackList

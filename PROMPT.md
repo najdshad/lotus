@@ -28,5 +28,4 @@
 
 # settings - theme
 
-- only dark mode works properly, light mode and AMOLED black options are broken
-- default theme should be AMOLED black
+- theme only works when selected to system default. for example when device is set to dark mode, selecting neither light mode, or AMOLED black works as intended. this should be fixed
