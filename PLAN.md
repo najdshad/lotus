@@ -1,11 +1,13 @@
 # Realm to Room Migration Plan
 
 ## Overview
+
 This document provides a step-by-step plan for migrating the Lotus music player database from Realm to Room. Since the database is empty, this is a clean implementation without data migration.
 
 ## Current State Analysis
 
 ### Realm Usage
+
 - **Version:** 2.3.0 (Kotlin SDK)
 - **Entity:** `PlaylistJson` with fields:
   - `name: String` (Primary Key)
@@ -14,6 +16,7 @@ This document provides a step-by-step plan for migrating the Lotus music player 
 - **Configuration:** Single entity schema in `PlayerModule.kt`
 
 ### Affected Files
+
 1. `gradle/libs.versions.toml` - Realm version definitions
 2. `build.gradle.kts` - Realm plugin
 3. `app/build.gradle.kts` - Realm plugin and dependency
@@ -26,11 +29,13 @@ This document provides a step-by-step plan for migrating the Lotus music player 
 ### Phase 1: Add Room Dependencies
 
 #### 1.1 Update `gradle/libs.versions.toml`
+
 Add Room version and library definitions:
+
 ```toml
 [versions]
 # Update or add:
-room = "2.7.0-alpha11"  # or stable version 2.6.1
+room = "2.6.1"
 
 [libraries]
 # Add:
@@ -40,6 +45,7 @@ androidx-room-compiler = { group = "androidx.room", name = "room-compiler", vers
 ```
 
 #### 1.2 Update `app/build.gradle.kts`
+
 ```kotlin
 plugins {
     // Remove: alias(libs.plugins.realm)
@@ -58,6 +64,7 @@ dependencies {
 ```
 
 #### 1.3 Update `build.gradle.kts`
+
 ```kotlin
 plugins {
     // Remove: alias(libs.plugins.realm) apply false
@@ -69,6 +76,7 @@ plugins {
 ### Phase 2: Create Room Entities
 
 #### 2.1 Create `app/src/main/java/com/dn0ne/player/app/data/entity/PlaylistEntity.kt`
+
 ```kotlin
 package com.dn0ne.player.app.data.entity
 
@@ -90,6 +98,7 @@ data class PlaylistEntity(
 ### Phase 3: Create Room DAO
 
 #### 3.1 Create `app/src/main/java/com/dn0ne/player/app/data/dao/PlaylistDao.kt`
+
 ```kotlin
 package com.dn0ne.player.app.data.dao
 
@@ -131,6 +140,7 @@ interface PlaylistDao {
 ### Phase 4: Create Room Database
 
 #### 4.1 Create `app/src/main/java/com/dn0ne/player/app/data/LotusDatabase.kt`
+
 ```kotlin
 package com.dn0ne.player.app.data
 
@@ -156,6 +166,7 @@ abstract class LotusDatabase : RoomDatabase() {
 ### Phase 5: Implement Room-based Repository
 
 #### 5.1 Create `app/src/main/java/com/dn0ne/player/app/data/repository/RoomPlaylistRepository.kt`
+
 ```kotlin
 package com.dn0ne.player.app.data.repository
 
@@ -211,6 +222,7 @@ fun PlaylistEntity.toPlaylist(): Playlist = Json.decodeFromString(json)
 ### Phase 6: Update DI Module
 
 #### 6.1 Update `app/src/main/java/com/dn0ne/player/app/di/PlayerModule.kt`
+
 ```kotlin
 package com.dn0ne.player.app.di
 
@@ -274,6 +286,7 @@ val playerModule = module {
 ```
 
 **Key changes:**
+
 - Remove `Realm` and `RealmConfiguration` imports
 - Remove `RealmPlaylistRepository` import
 - Add `LotusDatabase`, `Room`, `PlaylistDao`, `RoomPlaylistRepository` imports
@@ -286,11 +299,13 @@ val playerModule = module {
 ### Phase 7: Remove Realm Files and Dependencies
 
 #### 7.1 Delete `app/src/main/java/com/dn0ne/player/app/data/repository/RealmPlaylistRepository.kt`
+
 ```bash
 rm app/src/main/java/com/dn0ne/player/app/data/repository/RealmPlaylistRepository.kt
 ```
 
 #### 7.2 Verify no other Realm imports exist
+
 ```bash
 # Search for remaining Realm imports
 rg -i "import.*realm" --type kotlin
@@ -302,17 +317,20 @@ rg -i "import.*realm" --type kotlin
 ### Phase 8: Build and Test
 
 #### 8.1 Clean and rebuild
+
 ```bash
 ./gradlew clean
 ./gradlew assembleDebug
 ```
 
 #### 8.2 Verify compilation
+
 - Ensure no Realm-related errors
 - Check Room annotation processing succeeds
 - Verify Room database schema export is generated
 
 #### 8.3 Manual testing checklist
+
 - [ ] Create a new playlist
 - [ ] Rename a playlist
 - [ ] Delete a playlist
@@ -327,14 +345,18 @@ rg -i "import.*realm" --type kotlin
 ### Phase 9: Additional Optimizations (Optional)
 
 #### 9.1 Add Type Converters for Track (Optional)
+
 Consider storing tracks as a separate table with relations instead of JSON:
+
 - Create `TrackEntity`
 - Create `PlaylistTrackEntity` (junction table for many-to-many)
 - Update DAO with `@Transaction` for fetching playlists with tracks
 - Update repository to handle relations
 
 #### 9.2 Add Database Migrations
+
 When schema changes in future versions:
+
 ```kotlin
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(database: SupportSQLiteDatabase) {
@@ -347,7 +369,9 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
 ```
 
 #### 9.3 Add Database Export/Import
+
 Export schema for version control verification:
+
 ```kotlin
 // In build.gradle.kts:
 ksp {
@@ -360,16 +384,19 @@ ksp {
 ## Verification Commands
 
 ### Check for Realm references
+
 ```bash
 rg -i "realm" --type kotlin -l
 ```
 
 ### Check for Realm in Gradle files
+
 ```bash
 rg -i "realm" build.gradle.kts app/build.gradle.kts gradle/libs.versions.toml
 ```
 
 ### Verify Room database creation
+
 ```bash
 # After running the app, check if database is created:
 adb shell run-as com.dn0ne.lotus ls -la databases/
