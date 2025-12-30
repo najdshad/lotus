@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlinx.serialization)
-    alias(libs.plugins.realm)
+    alias(libs.plugins.ksp)
 }
 
 val splitApks = !project.hasProperty("noSplits")
@@ -18,8 +18,8 @@ android {
         applicationId = "com.dn0ne.lotus"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1_003_002
-        versionName = "1.3.2"
+        versionCode = 1_004_000
+        versionName = "1.4.0"
 
         if (splitApks) {
             splits {
@@ -131,7 +131,9 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
 implementation(libs.kotlinx.serialization.json)
 implementation(libs.coil)
-implementation(libs.realm.library.base)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
     implementation(libs.reorderable)
     implementation(libs.scrollbars)
 }

@@ -30,7 +30,7 @@ Android music player (Lotus) built with Jetpack Compose, following clean archite
 - **UI:** Jetpack Compose with Material3, Navigation, and dynamic theming
 - **DI:** Koin for dependency injection
 - **Media:** Media3 Exoplayer for audio playback
-- **Data:** Realm for local storage, Ktor for network, MediaStore for device scanning
+- **Data:** Room for local storage, Ktor for network, MediaStore for device scanning
 - **Serialization:** kotlinx.serialization for JSON handling
 
 ## Architecture
@@ -38,6 +38,8 @@ Android music player (Lotus) built with Jetpack Compose, following clean archite
 **Layers:** `presentation/` → `domain/` → `data/` → `core/`
 
 **Repository Pattern:** All data access goes through repository interfaces (TrackRepository, PlaylistRepository, LyricsRepository) implemented in data layer.
+
+**Database:** Room database with entities for playlists and playlist tracks. DAO pattern for database operations with Flow-based reactive queries.
 
 **Dependency Injection:** Use Koin modules in `di/` packages. Singletons for repositories, viewModels for ViewModels.
 

@@ -15,7 +15,8 @@ navigationCompose = "2.8.5"
 kotlinxSerializationPlugin = "2.0.21"
 kotlinxSerializationJson = "1.7.3"
 coil = "3.0.1"
-realm = "2.3.0"
+room = "2.6.1"
+ksp = "2.0.20-1.0.25"
 reorderable = "2.4.2"
 splashScreen = "1.0.1"
 scrollbars = "2.2.0"
@@ -45,7 +46,9 @@ koin-androidx-compose = { group = "io.insert-koin", name = "koin-androidx-compos
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 coil = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
-realm-library-base = { group = "io.realm.kotlin", name = "library-base", version.ref = "realm" }
+androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 reorderable = { group = "sh.calvin.reorderable", name = "reorderable", version.ref = "reorderable" }
 scrollbars = { group = "com.github.nanihadesuka", name = "LazyColumnScrollbar", version.ref = "scrollbars" }
 
@@ -54,4 +57,4 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlinxSerializationPlugin" }
-realm = { id = "io.realm.kotlin", version.ref = "realm" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
