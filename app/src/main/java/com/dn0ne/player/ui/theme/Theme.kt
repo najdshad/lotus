@@ -86,9 +86,48 @@ private val darkScheme = darkColorScheme(
     surfaceContainerHighest = surfaceContainerHighestDark,
 )
 
+private val amoledScheme = darkColorScheme(
+    primary = primaryAmoled,
+    onPrimary = onPrimaryAmoled,
+    primaryContainer = primaryContainerAmoled,
+    onPrimaryContainer = onPrimaryContainerAmoled,
+    secondary = secondaryAmoled,
+    onSecondary = onSecondaryAmoled,
+    secondaryContainer = secondaryContainerAmoled,
+    onSecondaryContainer = onSecondaryContainerAmoled,
+    tertiary = tertiaryAmoled,
+    onTertiary = onTertiaryAmoled,
+    tertiaryContainer = tertiaryContainerAmoled,
+    onTertiaryContainer = onTertiaryContainerAmoled,
+    error = errorAmoled,
+    onError = onErrorAmoled,
+    errorContainer = errorContainerAmoled,
+    onErrorContainer = onErrorContainerAmoled,
+    background = backgroundAmoled,
+    onBackground = onBackgroundAmoled,
+    surface = surfaceAmoled,
+    onSurface = onSurfaceAmoled,
+    surfaceVariant = surfaceVariantAmoled,
+    onSurfaceVariant = onSurfaceVariantAmoled,
+    outline = outlineAmoled,
+    outlineVariant = outlineVariantAmoled,
+    scrim = scrimAmoled,
+    inverseSurface = inverseSurfaceAmoled,
+    inverseOnSurface = inverseOnSurfaceAmoled,
+    inversePrimary = inversePrimaryAmoled,
+    surfaceDim = surfaceDimAmoled,
+    surfaceBright = surfaceBrightAmoled,
+    surfaceContainerLowest = surfaceContainerLowestAmoled,
+    surfaceContainerLow = surfaceContainerLowAmoled,
+    surfaceContainer = surfaceContainerAmoled,
+    surfaceContainerHigh = surfaceContainerHighAmoled,
+    surfaceContainerHighest = surfaceContainerHighestAmoled,
+)
+
 @Composable
 fun MusicPlayerTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    amoledDarkTheme: Boolean = false,
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
@@ -99,6 +138,7 @@ fun MusicPlayerTheme(
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
 
+        darkTheme && amoledDarkTheme -> amoledScheme
         darkTheme -> darkScheme
         else -> lightScheme
     }

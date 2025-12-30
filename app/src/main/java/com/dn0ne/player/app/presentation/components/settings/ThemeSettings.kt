@@ -194,18 +194,20 @@ fun ThemeSettings(
         }
 
         val amoledDarkTheme by settings.amoledDarkTheme.collectAsState()
-        SettingSwitch(
-            title = context.resources.getString(R.string.black_theme),
-            supportingText = context.resources.getString(R.string.black_theme_explain),
-            icon = Icons.Rounded.Contrast,
-            isChecked = amoledDarkTheme,
-            onCheckedChange = {
-                settings.updateAmoledDarkTheme(it)
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp)
-        )
+        if (selectedAppearance != Appearance.Light) {
+            SettingSwitch(
+                title = context.resources.getString(R.string.black_theme),
+                supportingText = context.resources.getString(R.string.black_theme_explain),
+                icon = Icons.Rounded.Contrast,
+                isChecked = amoledDarkTheme,
+                onCheckedChange = {
+                    settings.updateAmoledDarkTheme(it)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+            )
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val useDynamicColor by settings.useDynamicColor.collectAsState()
