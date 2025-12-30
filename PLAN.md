@@ -1,449 +1,876 @@
-# Migration Plan: Realm to Room
+# Database Migration Plan: Realm to Room
 
-## Executive Summary
+## Overview
 
-Migrate from Realm database to Room to achieve:
-- **Smaller memory footprint**: Eliminate JSON serialization/deserialization overhead
-- **Better performance**: Use native SQL queries and proper indexing
-- **Type safety**: Leverage Room's compile-time SQL verification
-- **Android ecosystem alignment**: Better integration with Jetpack components
+This document provides a step-by-step guide for migrating the Lotus music player database from Realm to Room. The migration focuses on playlist data storage, which is currently stored in Realm as JSON strings.
 
-## Current State Analysis
+**Current State:**
+- Playlists stored in Realm via `PlaylistJson` entity
+- Tracks queried from MediaStore (not in Realm)
+- Data stored as serialized JSON strings in Realm
+- Single Realm instance managed by Koin DI
 
-### Realm Implementation
-- **Schema**: Single entity `PlaylistJson`
-  - `name` (String, primary key)
-  - `json` (String, serialized entire Playlist as JSON)
-- **Storage approach**: Entire playlist (including all tracks) stored as JSON blob
-- **Problems**:
-  - JSON serialization/deserialization on every read/write
-  - No relational integrity
-  - Can't query individual tracks efficiently
-  - Large memory usage (entire JSON loaded into memory)
-  - No foreign key relationships
-  - Unnecessary duplication of track data
+**Target State:**
+- Playlists stored in Room with normalized schema
+- Proper relational data structure
+- Type-safe queries with Room DAO
+- Reactive Flow-based observations maintained
 
-### Data Flow
+## Current Realm Analysis
+
+### Schema (Realm)
+- **Entity:** `PlaylistJson`
+  - `name: String` (primary key)
+  - `json: String` (serialized Playlist object)
+
+### Repository Operations
+- `getPlaylists(): Flow<List<Playlist>>`
+- `insertPlaylist(playlist: Playlist)`
+- `updatePlaylistTrackList(playlist: Playlist, trackList: List<Track>)`
+- `renamePlaylist(playlist: Playlist, name: String)`
+- `deletePlaylist(playlist: Playlist)`
+
+### Key Dependencies
+- Realm Kotlin SDK v2.3.0
+- kotlinx.serialization for JSON serialization
+- Koin for dependency injection
+
+---
+
+## Migration Plan
+
+### Phase 1: Setup and Dependencies (Day 1)
+
+#### 1.1 Update Gradle Dependencies
+
+**File:** `gradle/libs.versions.toml`
+
+Add Room dependencies:
+```toml
+[versions]
+room = "2.7.0-alpha10"  # Check latest stable version
+
+[libraries]
+androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+
+[plugins]
+ksp = { id = "com.google.devtools.ksp", version = "2.0.20-1.0.25" }
 ```
-PlayerViewModel → PlaylistRepository (interface) → RealmPlaylistRepository → Realm DB
-                                              ↓
-                                    JSON serialization/deserialization
-```
 
-## Target Architecture
+**File:** `app/build.gradle.kts`
 
-### Room Schema Design
-
-**Entities:**
+Add KSP plugin and Room dependencies:
 ```kotlin
+plugins {
+    // existing plugins...
+    alias(libs.plugins.ksp)  // Add this line
+}
+
+dependencies {
+    // existing dependencies...
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+    
+    // Remove these after migration is complete:
+    // implementation(libs.realm.library.base)
+    // alias(libs.plugins.realm)
+}
+```
+
+#### 1.2 Create Type Converters
+
+**File:** `app/src/main/java/com/dn0ne/player/app/data/database/Converters.kt`
+
+```kotlin
+package com.dn0ne.player.app.data.database
+
+import android.net.Uri
+import androidx.room.TypeConverter
+
+object UriConverter {
+    @TypeConverter
+    fun fromUri(uri: Uri?): String? = uri?.toString()
+
+    @TypeConverter
+    fun toUri(uriString: String?): Uri? = uriString?.let { Uri.parse(it) }
+}
+```
+
+---
+
+### Phase 2: Create Room Entities (Day 1-2)
+
+#### 2.1 Create Playlist Entity
+
+**File:** `app/src/main/java/com/dn0ne/player/app/data/database/PlaylistEntity.kt`
+
+```kotlin
+package com.dn0ne.player.app.data.database
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
 @Entity(tableName = "playlists")
 data class PlaylistEntity(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
+    @PrimaryKey
     val name: String,
     val createdAt: Long = System.currentTimeMillis()
 )
+```
+
+#### 2.2 Create PlaylistTrack Junction Entity
+
+**File:** `app/src/main/java/com/dn0ne/player/app/data/database/PlaylistTrackEntity.kt`
+
+```kotlin
+package com.dn0ne.player.app.data.database
+
+import androidx.room.Entity
+import androidx.room.Index
+import androidx.room.ForeignKey
 
 @Entity(
     tableName = "playlist_tracks",
+    primaryKeys = ["playlistName", "position"],
     foreignKeys = [
         ForeignKey(
             entity = PlaylistEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["playlistId"],
+            parentColumns = ["name"],
+            childColumns = ["playlistName"],
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [
-        Index(value = ["playlistId"]),
-        Index(value = ["trackUri"])
-    ]
+    indices = [Index(value = ["playlistName"])]
 )
 data class PlaylistTrackEntity(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
-    val playlistId: Long,
-    val trackUri: String,
-    val position: Int
+    val playlistName: String,
+    val position: Int,
+    val trackData: String  // Serialized Track object as JSON
 )
 ```
 
-**Benefits of this design:**
-- **Minimal storage**: Only store track URIs, not full track data
-- **Efficient queries**: Indexed foreign keys enable fast lookups
-- **Relational integrity**: CASCADE deletion ensures cleanup
-- **Small memory footprint**: Load only necessary data
-- **Scalability**: Efficiently handle large playlists
+#### 2.3 Create Track Serialization Helper
 
-### New Data Flow
-```
-PlayerViewModel → PlaylistRepository (interface) → RoomPlaylistRepository → Room Database
-                                              ↓
-                                      Direct SQL queries with Flow
-```
-
-## Migration Strategy: Phased Approach
-
-### Phase 1: Preparation & Design (Days 1-2)
-
-**Step 1.1: Add Room dependencies**
-- Update `gradle/libs.versions.toml`
-  - Add `room = "2.6.1"` (or latest stable)
-  - Add Room library entries
-- Update `app/build.gradle.kts`
-  - Add ksp plugin
-  - Add Room dependencies
-  - Keep Realm for now (dual implementation period)
-
-**Step 1.2: Create Room entities and DAOs**
-- Create `app/src/main/java/com/dn0ne/player/app/data/local/entity/`
-  - `PlaylistEntity.kt`
-  - `PlaylistTrackEntity.kt`
-- Create `app/src/main/java/com/dn0ne/player/app/data/local/dao/`
-  - `PlaylistDao.kt` with methods:
-    - `getAllPlaylists(): Flow<List<PlaylistEntity>>`
-    - `insertPlaylist(playlist: PlaylistEntity): Long`
-    - `updatePlaylistName(playlistId: Long, name: String)`
-    - `deletePlaylist(playlistId: Long)`
-    - `getPlaylistTracks(playlistId: Long): Flow<List<PlaylistTrackEntity>>`
-    - `insertTrackToPlaylist(track: PlaylistTrackEntity)`
-    - `removeTrackFromPlaylist(playlistId: Long, trackUri: String)`
-    - `updateTrackPosition(playlistId: Long, trackUri: String, newPosition: Int)`
-
-**Step 1.3: Create Room database**
-- Create `app/src/main/java/com/dn0ne/player/app/data/local/LotusDatabase.kt`
-- Define database version and migration strategy
-- Initial version: 1
-
-### Phase 2: Room Implementation (Days 3-4)
-
-**Step 2.1: Create RoomPlaylistRepository**
-- Create `app/src/main/java/com/dn0ne/player/app/data/repository/RoomPlaylistRepository.kt`
-- Implement `PlaylistRepository` interface
-- Methods to implement:
-  - `getPlaylists()`: Query all playlists, join with track entities, convert to domain models
-  - `insertPlaylist()`: Insert playlist entity, then track entities in transaction
-  - `updatePlaylistTrackList()`: Delete all tracks for playlist, insert new ones in transaction
-  - `renamePlaylist()`: Simple UPDATE query
-  - `deletePlaylist()`: CASCADE handles track deletion automatically
-
-**Step 2.2: Update DI module for dual implementation**
-- Modify `app/src/main/java/com/dn0ne/player/app/di/PlayerModule.kt`
-- Add qualifier: `@Qualifier annotation @OldRealm and @NewRoom`
-- Provide both implementations:
-  ```kotlin
-  single<PlaylistRepository>(qualifier = named("old")) {
-      RealmPlaylistRepository(realm = get())
-  }
-  single<PlaylistRepository>(qualifier = named("new")) {
-      RoomPlaylistRepository(playlistDao = get())
-  }
-  ```
-- Configure flag in Settings for switching between implementations
-
-**Step 2.3: Create data migration utility**
-- Create `app/src/main/java/com/dn0ne/player/app/data/migration/MigrateToRoom.kt`
-- Function to:
-  - Read all playlists from Realm
-  - Convert to Room entities
-  - Insert into Room database
-  - Verify migration success
-
-### Phase 3: Migration Execution (Days 5-6)
-
-**Step 3.1: Implement migration in App setup**
-- Modify `SetupViewModel` or create `MigrationViewModel`
-- Check if Room database is empty
-- If empty and Realm has data, trigger migration
-- Show progress indicator during migration
-- Save migration completion flag in Settings
-
-**Step 3.2: Update ViewModel to use Room implementation**
-- Modify `PlayerViewModel` to accept `PlaylistRepository` (still interface)
-- Remove Realm-specific imports
-- Test all playlist operations
-
-**Step 3.3: Write migration tests**
-- Create unit tests for migration logic
-- Test edge cases:
-  - Empty playlists
-  - Large playlists (1000+ tracks)
-  - Duplicate track URIs
-  - Playlist renaming before migration
-  - Migration interruption handling
-
-### Phase 4: Cleanup & Optimization (Days 7-8)
-
-**Step 4.1: Remove Realm dependencies**
-- Once migration is verified and working:
-  - Remove Realm plugin from `app/build.gradle.kts`
-  - Remove Realm dependencies
-  - Remove Realm import from `PlayerModule.kt`
-  - Delete `RealmPlaylistRepository.kt`
-  - Delete `PlaylistJson` class
-  - Remove `PlaylistJson.toPlaylistJson()` extension
-
-**Step 4.2: Clean up Koin module**
-- Remove qualifiers from DI
-- Simplify to single `PlaylistRepository` provider:
-  ```kotlin
-  single<PlaylistRepository> {
-      RoomPlaylistRepository(playlistDao = get())
-  }
-  ```
-
-**Step 4.3: Performance optimization**
-- Add database indexes on frequently queried columns
-- Implement query result paging if playlists are very large
-- Consider using `@RawQuery` for complex queries if needed
-- Monitor database size and add cleanup routines for orphaned tracks
-
-**Step 4.4: Add Room database migrations**
-- Create `Migration_1_to_2.kt` (placeholder for future schema changes)
-- Test migration path
-
-### Phase 5: Testing & Validation (Days 9-10)
-
-**Step 5.1: Unit tests**
-- Test `RoomPlaylistRepository` methods
-- Test `PlaylistDao` queries
-- Mock `TrackRepository` for integration tests
-
-**Step 5.2: Instrumented tests**
-- Test database operations on real device/emulator
-- Test migration from Realm to Room
-- Test large playlists performance
-- Test concurrent access
-
-**Step 5.3: Manual testing**
-- Test all playlist operations:
-  - Create playlist
-  - Add/remove tracks
-  - Rename playlist
-  - Delete playlist
-  - Reorder tracks
-  - Persist across app restarts
-- Verify no data loss after migration
-
-**Step 5.4: Performance profiling**
-- Compare memory usage before/after migration
-- Measure query times for:
-  - Loading playlists
-  - Adding/removing tracks
-  - Large playlist operations
-- Profile with Android Studio Profiler
-
-### Phase 6: Documentation & Deployment (Days 11-12)
-
-**Step 6.1: Update documentation**
-- Update AGENTS.md with Room-specific guidelines
-- Document database schema in docs/
-- Add migration guide for future schema changes
-
-**Step 6.2: Version bump and changelog**
-- Increment version code and version name
-- Document changes in changelog
-- Test release build
-
-**Step 6.3: Deploy**
-- Run tests: `./gradlew test`
-- Run instrumented tests: `./gradlew connectedAndroidTest`
-- Build release APK: `./gradlew assembleRelease`
-- Verify APK size impact
-
-## Performance Optimizations
-
-### Memory Footprint Reduction
-1. **Eliminate JSON serialization**: Save ~30-40% memory on playlist operations
-2. **Lazy loading**: Room Flow loads data incrementally
-3. **Efficient queries**: Use indexed foreign keys for fast joins
-4. **Minimal storage**: Store only track URIs, not full track data
-
-### Query Optimizations
-1. **Add indexes**:
-   - `playlist_tracks.playlistId` (for JOIN operations)
-   - `playlist_tracks.trackUri` (for checking track existence)
-2. **Use `@Transaction`** for multi-step operations to prevent partial writes
-3. **Use `Flow`** for reactive data loading
-4. **Implement query result caching** if needed
-
-## Risk Assessment & Mitigation
-
-### High Risk
-- **Data loss during migration**:
-  - Mitigation: Backup Realm data before migration
-  - Mitigation: Verify migration success before deleting Realm
-  - Mitigation: Keep Realm data for 2 app versions after migration
-
-### Medium Risk
-- **Migration failure on large datasets**:
-  - Mitigation: Test with large playlists (1000+ tracks)
-  - Mitigation: Implement batch migration (100 tracks at a time)
-  - Mitigation: Show progress to user, allow retry
-
-### Low Risk
-- **Performance regression**:
-  - Mitigation: Profile before and after
-  - Mitigation: Add indexes proactively
-  - Mitigation: Optimize queries based on profiling results
-
-## Success Criteria
-
-### Functional
-- [ ] All playlist operations work correctly
-- [ ] No data loss after migration
-- [ ] Migration completes successfully on all test devices
-- [ ] App crashes: 0 increase
-
-### Performance
-- [ ] Memory usage: ≤ 70% of current implementation
-- [ ] Playlist load time: ≤ 80% of current implementation
-- [ ] Add/remove track operations: ≤ 70% of current
-- [ ] APK size increase: < 1 MB
-
-### Code Quality
-- [ ] All tests pass
-- [ ] No Realm dependencies remain
-- [ ] Code follows project conventions
-- [ ] Documentation updated
-
-## Rollback Plan
-
-If issues arise after migration:
-1. Keep Realm migration flag in Settings
-2. Allow users to revert to Realm implementation via settings
-3. Keep Realm schema for 2 versions (3.0 and 3.1)
-4. Implement "restore from backup" if migration fails
-
-## Estimated Timeline
-
-- **Phase 1**: 2 days
-- **Phase 2**: 2 days
-- **Phase 3**: 2 days
-- **Phase 4**: 2 days
-- **Phase 5**: 2 days
-- **Phase 6**: 2 days
-
-**Total**: 12 days
-
-## Next Steps
-
-1. Review and approve this plan
-2. Begin Phase 1: Add Room dependencies
-3. Create entities and DAOs
-4. Implement RoomPlaylistRepository
-5. Execute migration strategy
-6. Test thoroughly before removing Realm
-
-## Appendix: Code Snippets
-
-### Example PlaylistDao Implementation
+**File:** `app/src/main/java/com/dn0ne/player/app/data/database/TrackJson.kt`
 
 ```kotlin
+package com.dn0ne.player.app.data.database
+
+import com.dn0ne.player.app.domain.track.Track
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+
+data class TrackJson(
+    val json: String
+)
+
+fun Track.toTrackJson(): TrackJson = TrackJson(Json.encodeToString(this))
+
+fun TrackJson.toTrack(): Track = Json.decodeFromString<Track>(json)
+```
+
+---
+
+### Phase 3: Create Room DAO (Day 2)
+
+**File:** `app/src/main/java/com/dn0ne/player/app/data/database/PlaylistDao.kt`
+
+```kotlin
+package com.dn0ne.player.app.data.database
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Transaction
+import com.dn0ne.player.app.domain.track.Playlist
+import kotlinx.coroutines.flow.Flow
+
 @Dao
 interface PlaylistDao {
-    @Transaction
-    @Query("""
-        SELECT p.* FROM playlists p
-        ORDER BY p.createdAt DESC
-    """)
-    fun getAllPlaylists(): Flow<List<PlaylistWithTracks>>
-
+    
+    @Query("SELECT * FROM playlists ORDER BY createdAt DESC")
+    fun getAllPlaylists(): Flow<List<PlaylistEntity>>
+    
+    @Query("SELECT * FROM playlists WHERE name = :name LIMIT 1")
+    suspend fun getPlaylistByName(name: String): PlaylistEntity?
+    
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertPlaylist(playlist: PlaylistEntity): Long
-
-    @Query("UPDATE playlists SET name = :name WHERE id = :id")
-    suspend fun updatePlaylistName(id: Long, name: String)
-
-    @Query("DELETE FROM playlists WHERE id = :id")
-    suspend fun deletePlaylist(id: Long)
-
+    suspend fun insertPlaylist(playlist: PlaylistEntity)
+    
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPlaylistTracks(tracks: List<PlaylistTrackEntity>)
+    
+    @Query("DELETE FROM playlist_tracks WHERE playlistName = :playlistName")
+    suspend fun deletePlaylistTracks(playlistName: String)
+    
+    @Query("DELETE FROM playlists WHERE name = :name")
+    suspend fun deletePlaylist(name: String)
+    
+    @Query("SELECT * FROM playlist_tracks WHERE playlistName = :playlistName ORDER BY position ASC")
+    fun getPlaylistTracks(playlistName: String): Flow<List<PlaylistTrackEntity>>
+    
     @Transaction
-    suspend fun insertPlaylistWithTracks(
-        playlist: PlaylistEntity,
-        tracks: List<PlaylistTrackEntity>
-    ) {
-        val playlistId = insertPlaylist(playlist)
-        tracks.forEach { it.playlistId = playlistId }
-        insertAllTracks(tracks)
+    suspend fun insertPlaylistWithTracks(playlist: PlaylistEntity, tracks: List<PlaylistTrackEntity>) {
+        insertPlaylist(playlist)
+        insertPlaylistTracks(tracks)
+    }
+    
+    @Transaction
+    suspend fun renamePlaylist(oldName: String, newName: String) {
+        val playlist = getPlaylistByName(oldName) ?: return
+        deletePlaylistTracks(oldName)
+        deletePlaylist(oldName)
+        insertPlaylist(playlist.copy(name = newName))
+        // Tracks need to be migrated to new name
+    }
+}
+```
+
+---
+
+### Phase 4: Create Room Database (Day 2-3)
+
+**File:** `app/src/main/java/com/dn0ne/player/app/data/database/LotusDatabase.kt`
+
+```kotlin
+package com.dn0ne.player.app.data.database
+
+import android.content.Context
+import androidx.room.Database
+import androidx.room.Room
+import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
+
+@Database(
+    entities = [PlaylistEntity::class, PlaylistTrackEntity::class],
+    version = 1,
+    exportSchema = true
+)
+@TypeConverters(UriConverter::class)
+abstract class LotusDatabase : RoomDatabase() {
+    abstract fun playlistDao(): PlaylistDao
+    
+    companion object {
+        private const val DATABASE_NAME = "lotus_database"
+        
+        @Volatile
+        private var INSTANCE: LotusDatabase? = null
+        
+        fun getDatabase(context: Context): LotusDatabase {
+            return INSTANCE ?: synchronized(this) {
+                val instance = Room.databaseBuilder(
+                    context.applicationContext,
+                    LotusDatabase::class.java,
+                    DATABASE_NAME
+                ).build()
+                INSTANCE = instance
+                instance
+            }
+        }
+    }
+}
+```
+
+---
+
+### Phase 5: Create Migration Logic from Realm (Day 3-4)
+
+**File:** `app/src/main/java/com/dn0ne/player/app/data/database/RealmMigrationHelper.kt`
+
+```kotlin
+package com.dn0ne.player.app.data.database
+
+import android.content.Context
+import com.dn0ne.player.app.data.repository.PlaylistJson
+import com.dn0ne.player.app.domain.track.Playlist
+import io.realm.kotlin.Realm
+import io.realm.kotlin.RealmConfiguration
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
+class RealmMigrationHelper(private val context: Context) {
+    
+    suspend fun migrateRealmDataToRoom(
+        realmConfig: RealmConfiguration,
+        roomDatabase: LotusDatabase
+    ): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val realm = Realm.open(realmConfig)
+            val realmPlaylists = realm.query<PlaylistJson>().find()
+            val dao = roomDatabase.playlistDao()
+            
+            realmPlaylists.forEach { realmPlaylist ->
+                val playlist = realmPlaylist.toPlaylist()
+                
+                // Create playlist entity
+                val playlistEntity = PlaylistEntity(
+                    name = playlist.name ?: "Unknown"
+                )
+                
+                // Create track entities
+                val trackEntities = playlist.trackList.mapIndexed { index, track ->
+                    PlaylistTrackEntity(
+                        playlistName = playlist.name ?: "Unknown",
+                        position = index,
+                        trackData = track.toTrackJson().json
+                    )
+                }
+                
+                // Insert into Room
+                dao.insertPlaylistWithTracks(playlistEntity, trackEntities)
+            }
+            
+            realm.close()
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+    
+    fun realmHasData(realmConfig: RealmConfiguration): Boolean {
+        return try {
+            val realm = Realm.open(realmConfig)
+            val hasData = realm.query<PlaylistJson>().count() > 0
+            realm.close()
+            hasData
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    fun deleteRealmDatabase(realmConfig: RealmConfiguration) {
+        Realm.deleteRealm(realmConfig)
+    }
+}
+```
+
+---
+
+### Phase 6: Create Room-Based Repository (Day 4-5)
+
+**File:** `app/src/main/java/com/dn0ne/player/app/data/repository/RoomPlaylistRepository.kt`
+
+```kotlin
+package com.dn0ne.player.app.data.repository
+
+import androidx.compose.ui.util.fastMap
+import com.dn0ne.player.app.data.database.LotusDatabase
+import com.dn0ne.player.app.data.database.PlaylistEntity
+import com.dn0ne.player.app.data.database.PlaylistTrackEntity
+import com.dn0ne.player.app.data.database.toTrack
+import com.dn0ne.player.app.domain.track.Playlist
+import com.dn0ne.player.app.domain.track.Track
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+
+class RoomPlaylistRepository(
+    private val database: LotusDatabase
+) : PlaylistRepository {
+    
+    override fun getPlaylists(): Flow<List<Playlist>> {
+        return database.playlistDao().getAllPlaylists().map { playlistEntities ->
+            playlistEntities.map { entity ->
+                Playlist(
+                    name = entity.name,
+                    trackList = emptyList()  // Loaded separately to avoid circular dependency
+                )
+            }
+        }
+    }
+    
+    override suspend fun insertPlaylist(playlist: Playlist) {
+        val playlistEntity = PlaylistEntity(name = playlist.name ?: "Unknown")
+        val trackEntities = playlist.trackList.mapIndexed { index, track ->
+            PlaylistTrackEntity(
+                playlistName = playlist.name ?: "Unknown",
+                position = index,
+                trackData = track.toTrackJson().json
+            )
+        }
+        
+        database.playlistDao().insertPlaylistWithTracks(playlistEntity, trackEntities)
+    }
+    
+    override suspend fun updatePlaylistTrackList(playlist: Playlist, trackList: List<Track>) {
+        // Delete existing tracks
+        database.playlistDao().deletePlaylistTracks(playlist.name ?: "Unknown")
+        
+        // Insert new tracks
+        val trackEntities = trackList.mapIndexed { index, track ->
+            PlaylistTrackEntity(
+                playlistName = playlist.name ?: "Unknown",
+                position = index,
+                trackData = track.toTrackJson().json
+            )
+        }
+        
+        database.playlistDao().insertPlaylistTracks(trackEntities)
+    }
+    
+    override suspend fun renamePlaylist(playlist: Playlist, name: String) {
+        database.playlistDao().renamePlaylist(playlist.name ?: "Unknown", name)
+    }
+    
+    override suspend fun deletePlaylist(playlist: Playlist) {
+        database.playlistDao().deletePlaylistTracks(playlist.name ?: "Unknown")
+        database.playlistDao().deletePlaylist(playlist.name ?: "Unknown")
+    }
+    
+    suspend fun getPlaylistWithTracks(name: String): Playlist? {
+        val tracks = database.playlistDao().getPlaylistTracks(name)
+            .map { entities ->
+                entities.sortedBy { it.position }.fastMap { entity ->
+                    entity.toTrack()
+                }
+            }
+        
+        return if (tracks.isNotEmpty()) {
+            Playlist(name = name, trackList = tracks)
+        } else {
+            null
+        }
+    }
+}
+```
+
+**Note:** For the `getPlaylists()` method, consider using a Room relation or modifying the approach to include tracks. See **Optimization Considerations** section.
+
+---
+
+### Phase 7: Update Dependency Injection (Day 5)
+
+**File:** `app/src/main/java/com/dn0ne/player/app/di/PlayerModule.kt`
+
+```kotlin
+package com.dn0ne.player.app.di
+
+import com.dn0ne.player.app.data.SavedPlayerState
+import com.dn0ne.player.app.data.database.LotusDatabase
+import com.dn0ne.player.app.data.database.RealmMigrationHelper
+import com.dn0ne.player.app.data.database.RoomPlaylistRepository
+import com.dn0ne.player.app.data.repository.PlaylistRepository
+import com.dn0ne.player.app.data.repository.TrackRepository
+import com.dn0ne.player.app.data.repository.TrackRepositoryImpl
+import com.dn0ne.player.app.presentation.PlayerViewModel
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.module.dsl.viewModel
+import org.koin.dsl.module
+
+val playerModule = module {
+
+    single<TrackRepository> {
+        TrackRepositoryImpl(
+            context = androidContext(),
+            settings = get()
+        )
     }
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAllTracks(tracks: List<PlaylistTrackEntity>)
+    single<SavedPlayerState> {
+        SavedPlayerState(
+            context = androidContext()
+        )
+    }
 
-    @Query("DELETE FROM playlist_tracks WHERE playlistId = :playlistId")
-    suspend fun clearPlaylistTracks(playlistId: Long)
+    single<LotusDatabase> {
+        LotusDatabase.getDatabase(androidContext())
+    }
+    
+    single<RealmMigrationHelper> {
+        RealmMigrationHelper(context = androidContext())
+    }
+
+    single<PlaylistRepository> {
+        RoomPlaylistRepository(
+            database = get()
+        )
+    }
+
+    viewModel<PlayerViewModel> {
+        PlayerViewModel(
+            savedPlayerState = get(),
+            trackRepository = get(),
+            playlistRepository = get(),
+            unsupportedArtworkEditFormats = emptyList(),
+            settings = get(),
+            musicScanner = get()
+        )
+    }
+}
+```
+
+---
+
+### Phase 8: Create Migration Service (Day 5-6)
+
+**File:** `app/src/main/java/com/dn0ne/player/app/data/migration/DataMigrationService.kt`
+
+```kotlin
+package com.dn0ne.player.app.data.migration
+
+import android.content.Context
+import androidx.startup.Initializer
+import com.dn0ne.player.app.data.database.LotusDatabase
+import com.dn0ne.player.app.data.database.RealmMigrationHelper
+import io.realm.kotlin.RealmConfiguration
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+
+class DataMigrationInitializer : Initializer<Unit> {
+    override fun create(context: Context) {
+        CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
+            performMigrationIfNeeded(context)
+        }
+    }
+    
+    override fun dependencies(): List<Class<out Initializer<*>>> = emptyList()
 }
 
+private suspend fun performMigrationIfNeeded(context: Context) {
+    val prefs = context.getSharedPreferences("migration_prefs", Context.MODE_PRIVATE)
+    val migrationCompleted = prefs.getBoolean("realm_to_room_migration", false)
+    
+    if (!migrationCompleted) {
+        val realmConfig = RealmConfiguration.create(schema = setOf())
+        val roomDatabase = LotusDatabase.getDatabase(context)
+        val migrationHelper = RealmMigrationHelper(context)
+        
+        if (migrationHelper.realmHasData(realmConfig)) {
+            val success = migrationHelper.migrateRealmDataToRoom(realmConfig, roomDatabase)
+            if (success) {
+                // Backup and delete Realm database
+                migrationHelper.deleteRealmDatabase(realmConfig)
+                prefs.edit().putBoolean("realm_to_room_migration", true).apply()
+            }
+        } else {
+            // No Realm data to migrate, mark as complete
+            prefs.edit().putBoolean("realm_to_room_migration", true).apply()
+        }
+    }
+}
+```
+
+**File:** `app/src/main/AndroidManifest.xml`
+
+Add the Initializer:
+```xml
+<provider
+    android:name="androidx.startup.InitializationProvider"
+    android:authorities="${applicationId}.androidx-startup"
+    android:exported="false"
+    tools:node="merge">
+    <meta-data
+        android:name="com.dn0ne.player.app.data.migration.DataMigrationInitializer"
+        android:value="androidx.startup" />
+</provider>
+```
+
+---
+
+### Phase 9: Testing and Validation (Day 6-7)
+
+#### 9.1 Unit Tests
+
+**File:** `app/src/test/java/com/dn0ne/player/app/data/repository/RoomPlaylistRepositoryTest.kt`
+
+```kotlin
+package com.dn0ne.player.app.data.repository
+
+import com.dn0ne.player.app.data.database.LotusDatabase
+import com.dn0ne.player.app.domain.track.Playlist
+import com.dn0ne.player.app.domain.track.Track
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
+import org.junit.After
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [30])
+class RoomPlaylistRepositoryTest {
+    
+    private lateinit var database: LotusDatabase
+    private lateinit var repository: RoomPlaylistRepository
+    
+    @Before
+    fun setup() {
+        // Use in-memory database for testing
+        database = Room.inMemoryDatabaseBuilder(
+            InstrumentationRegistry.getInstrumentation().context,
+            LotusDatabase::class.java
+        ).build()
+        repository = RoomPlaylistRepository(database)
+    }
+    
+    @After
+    fun teardown() {
+        database.close()
+    }
+    
+    @Test
+    fun `insertPlaylist and retrieve it`() = runTest {
+        val playlist = Playlist(
+            name = "Test Playlist",
+            trackList = emptyList()
+        )
+        
+        repository.insertPlaylist(playlist)
+        
+        val playlists = repository.getPlaylists().first()
+        assertThat(playlists).hasSize(1)
+        assertThat(playlists[0].name).isEqualTo("Test Playlist")
+    }
+    
+    @Test
+    fun `deletePlaylist removes it from database`() = runTest {
+        val playlist = Playlist(
+            name = "Test Playlist",
+            trackList = emptyList()
+        )
+        
+        repository.insertPlaylist(playlist)
+        repository.deletePlaylist(playlist)
+        
+        val playlists = repository.getPlaylists().first()
+        assertThat(playlists).isEmpty()
+    }
+    
+    // Add more tests for other operations...
+}
+```
+
+#### 9.2 Manual Testing Checklist
+
+- [ ] Create a new playlist in Realm version
+- [ ] Add tracks to playlist
+- [ ] Install app with Room migration
+- [ ] Verify playlist appears correctly
+- [ ] Verify all tracks are present
+- [ ] Create new playlist in Room version
+- [ ] Rename playlist
+- [ ] Delete playlist
+- [ ] Reorder tracks in playlist
+- [ ] Import M3U playlist
+- [ ] Test with large playlist (100+ tracks)
+- [ ] Test with no existing Realm data (fresh install)
+
+#### 9.3 Performance Testing
+
+- Measure query time for playlists with 100, 500, 1000 tracks
+- Compare with Realm performance
+- Ensure UI remains responsive during large playlist operations
+
+---
+
+### Phase 10: Cleanup (Day 7)
+
+#### 10.1 Remove Realm Dependencies
+
+**File:** `gradle/libs.versions.toml`
+- Remove `realm = "2.3.0"` from versions
+- Remove `realm-library-base` from libraries
+- Remove `realm` plugin from plugins
+
+**File:** `app/build.gradle.kts`
+- Remove `alias(libs.plugins.realm)` from plugins
+- Remove `implementation(libs.realm.library.base)` from dependencies
+
+#### 10.2 Delete Realm-Related Files
+
+Delete these files:
+- `app/src/main/java/com/dn0ne/player/app/data/repository/RealmPlaylistRepository.kt`
+- `app/src/main/java/com/dn0ne/player/app/data/repository/PlaylistJson.kt` (moved to migration helper)
+
+#### 10.3 Update PlayerModule Imports
+
+Remove imports:
+- `import io.realm.kotlin.Realm`
+- `import io.realm.kotlin.RealmConfiguration`
+
+---
+
+## Optimization Considerations
+
+### 1. Playlist with Tracks Loading
+
+The current `getPlaylists()` implementation returns playlists without tracks. This is a design decision to avoid N+1 query problems. Consider these approaches:
+
+**Option A: Load Tracks on Demand (Current)**
+- Pros: Fast initial load
+- Cons: Additional query when playlist is opened
+
+**Option B: Pre-load with Room Relations**
+```kotlin
 data class PlaylistWithTracks(
     @Embedded val playlist: PlaylistEntity,
     @Relation(
-        parentColumn = "id",
-        entityColumn = "playlistId"
+        parentColumn = "name",
+        entityColumn = "playlistName"
     )
     val tracks: List<PlaylistTrackEntity>
 )
+
+@Query("SELECT * FROM playlists")
+fun getPlaylistsWithTracks(): Flow<List<PlaylistWithTracks>>
 ```
 
-### Example RoomPlaylistRepository
+**Option C: Use Room's Multi-Instance Paging**
+For very large playlists, use Paging 3 library.
+
+### 2. Index Optimization
+
+Consider adding indexes for common queries:
+```kotlin
+@Entity(
+    tableName = "playlist_tracks",
+    indices = [
+        Index(value = ["playlistName"]),
+        Index(value = ["playlistName", "position"])  // Composite index
+    ]
+)
+```
+
+### 3. Track Data Storage
+
+Currently storing Track as JSON string. Consider:
+
+**Pros of JSON approach:**
+- Simple, no complex migrations
+- Handles all Track properties easily
+
+**Cons:**
+- Can't query by track properties
+- Larger storage size
+- No foreign key integrity
+
+**Alternative:** Create separate `TrackEntity` table with foreign key to playlist_tracks.
+
+### 4. Caching
+
+Consider caching frequently accessed playlists in memory using `LruCache`.
+
+---
+
+## Risk Mitigation
+
+### 1. Data Loss Prevention
+
+- **Backup Realm database** before migration
+- Keep Realm migration code for 2-3 releases
+- Add "Export Playlists" feature before migration
+
+### 2. Rollback Plan
+
+If critical issues are found:
+
+1. Add build flag to use Realm: `buildConfigField("boolean", "USE_REALM", "true")`
+2. Keep Realm code branch available
+3. Quick hotfix release to revert changes
+
+### 3. Migration Failure Handling
 
 ```kotlin
-class RoomPlaylistRepository(
-    private val playlistDao: PlaylistDao,
-    private val trackRepository: TrackRepository
-) : PlaylistRepository {
-
-    override fun getPlaylists(): Flow<List<Playlist>> {
-        return playlistDao.getAllPlaylists().map { playlistsWithTracks ->
-            playlistsWithTracks.map { it.toPlaylist(trackRepository) }
-        }
-    }
-
-    override suspend fun insertPlaylist(playlist: Playlist) {
-        val trackEntities = playlist.trackList.mapIndexed { index, track ->
-            PlaylistTrackEntity(
-                trackUri = track.uri.toString(),
-                position = index
-            )
-        }
-        val playlistEntity = PlaylistEntity(
-            name = playlist.name ?: ""
-        )
-        playlistDao.insertPlaylistWithTracks(playlistEntity, trackEntities)
-    }
-
-    override suspend fun updatePlaylistTrackList(playlist: Playlist, trackList: List<Track>) {
-        val trackEntities = trackList.mapIndexed { index, track ->
-            PlaylistTrackEntity(
-                trackUri = track.uri.toString(),
-                position = index
-            )
-        }
-        // Transaction: clear existing tracks and insert new ones
-        playlistDao.clearPlaylistTracks(playlist.id)
-        playlistDao.insertAllTracks(trackEntities)
-    }
-
-    override suspend fun renamePlaylist(playlist: Playlist, name: String) {
-        playlistDao.updatePlaylistName(playlist.id, name)
-    }
-
-    override suspend fun deletePlaylist(playlist: Playlist) {
-        playlistDao.deletePlaylist(playlist.id)
+private suspend fun performMigrationIfNeeded(context: Context) {
+    try {
+        // Migration logic
+    } catch (e: Exception) {
+        Log.e("Migration", "Migration failed", e)
+        // Don't mark as complete, user can retry in next version
     }
 }
+```
 
-suspend fun PlaylistWithTracks.toPlaylist(
-    trackRepository: TrackRepository
-): Playlist {
-    val tracks = tracks
-        .sortedBy { it.position }
-        .mapNotNull { trackEntity ->
-            trackRepository.getTrackByUri(Uri.parse(trackEntity.trackUri))
-        }
-    return Playlist(
-        name = playlist.name,
-        trackList = tracks
-    )
-}
+---
+
+## Post-Migration Tasks
+
+1. **Database Version Management**: Implement proper Room migrations for future schema changes
+2. **Export/Import Feature**: Add playlist export to M3U/JSON for backup
+3. **Analytics**: Track migration success/failure rates
+4. **Documentation**: Update AGENTS.md to reflect Room usage
+5. **Code Review**: Review all database operations for performance
+6. **Memory Profiling**: Check for memory leaks with large playlists
+
+---
+
+## Testing Commands
+
+```bash
+# Run unit tests
+./gradlew test
+
+# Run instrumented tests
+./gradlew connectedAndroidTest
+
+# Build debug APK for testing
+./gradlew assembleDebug
+
+# Install and test
+adb install app/build/outputs/apk/debug/app-debug.apk
+
+# Check database
+adb shell run-as com.dn0ne.lotus ls -la databases/
+adb shell run-as com.dn0ne.lotus cat databases/lotus_database
+```
+
+---
+
+## Timeline Summary
+
+| Phase | Duration | Owner | Status |
+|-------|----------|-------|--------|
+| Phase 1: Setup | 1 day | Dev | Pending |
+| Phase 2: Entities | 1-2 days | Dev | Pending |
+| Phase 3: DAO | 1 day | Dev | Pending |
+| Phase 4: Database | 1 day | Dev | Pending |
+| Phase 5: Migration | 1-2 days | Dev | Pending |
+| Phase 6: Repository | 1-2 days | Dev | Pending |
+| Phase 7: DI Update | 1 day | Dev | Pending |
+| Phase 8: Migration Service | 1-2 days | Dev | Pending |
+| Phase 9: Testing | 1-2 days | QA | Pending |
+| Phase 10: Cleanup | 1 day | Dev | Pending |
+| **Total** | **9-14 days** | | |
+
+---
+
+## Contact & Resources
+
+- **Room Documentation**: https://developer.android.com/training/data-storage/room
+- **Kotlin Flow with Room**: https://developer.android.com/kotlin/flow
+- **Room Migrations**: https://developer.android.com/training/data-storage/room/migrating-db-versions
+- **Migration from Realm**: https://www.mongodb.com/docs/realm/sdk/android/
+
+## Appendix: File Structure After Migration
+
+```
+app/src/main/java/com/dn0ne/player/
+├── app/
+│   ├── data/
+│   │   ├── database/
+│   │   │   ├── Converters.kt
+│   │   │   ├── LotusDatabase.kt
+│   │   │   ├── PlaylistDao.kt
+│   │   │   ├── PlaylistEntity.kt
+│   │   │   ├── PlaylistTrackEntity.kt
+│   │   │   ├── RealmMigrationHelper.kt
+│   │   │   └── TrackJson.kt
+│   │   ├── migration/
+│   │   │   └── DataMigrationInitializer.kt
+│   │   └── repository/
+│   │       ├── PlaylistRepository.kt (unchanged)
+│   │       ├── RoomPlaylistRepository.kt (new)
+│   │       └── TrackRepositoryImpl.kt (unchanged)
+│   └── di/
+│       └── PlayerModule.kt (updated)
 ```
