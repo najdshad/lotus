@@ -139,6 +139,13 @@ class PlayerViewModel(
         initialValue = null
     )
 
+    private val _selectedPlaylistIsAlbum = MutableStateFlow(false)
+    val selectedPlaylistIsAlbum = _selectedPlaylistIsAlbum.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000L),
+        initialValue = false
+    )
+
     private val _playbackState = MutableStateFlow(PlaybackState())
     val playbackState = _playbackState
         .stateIn(
@@ -525,6 +532,9 @@ class PlayerViewModel(
             is OnPlaylistSelection -> {
                 _selectedPlaylist.update {
                     event.playlist
+                }
+                _selectedPlaylistIsAlbum.update {
+                    event.isAlbum
                 }
             }
 

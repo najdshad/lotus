@@ -12,8 +12,8 @@
 - [x] Remove track number from sort options
 
 ## Album Overview
-- [ ] Restrict sorting to track number only
-- [ ] Add formatted "X Tracks" string under album name
+- [x] Restrict sorting to track number only
+- [x] Add formatted "X Tracks" string under album name
 
 ## Now Playing
 - [ ] Remove 3 dot menu, replace with "Add to playlist" option

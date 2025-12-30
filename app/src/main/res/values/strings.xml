@@ -341,4 +341,5 @@
 
     <string name="copy_error">Copy error</string>
     <string name="select_all">Select all</string>
+    <string name="x_tracks">%d Tracks</string>
 </resources>

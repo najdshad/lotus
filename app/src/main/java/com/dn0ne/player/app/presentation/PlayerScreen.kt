@@ -318,7 +318,8 @@ fun PlayerScreen(
                                         playlist.copy(
                                             name = playlist.name
                                                 ?: context.resources.getString(R.string.unknown_album)
-                                        )
+                                        ),
+                                        isAlbum = true
                                     )
                                 )
                                 navController.navigate(PlayerRoutes.Playlist)
@@ -358,6 +359,7 @@ fun PlayerScreen(
                         }
 
                         val playlist by viewModel.selectedPlaylist.collectAsState()
+                        val isAlbumPlaylist by viewModel.selectedPlaylistIsAlbum.collectAsState()
                         playlist?.let { playlist ->
                             val shouldShowLocateButton by remember(currentTrack, playlist) {
                                 derivedStateOf {
@@ -434,7 +436,8 @@ fun PlayerScreen(
                                 onBackClick = {
                                     navController.navigateUp()
                                 },
-                                replaceSearchWithFilter = replaceSearchWithFilter
+                                replaceSearchWithFilter = replaceSearchWithFilter,
+                                showTrackCount = isAlbumPlaylist
                             )
                         }
                     }

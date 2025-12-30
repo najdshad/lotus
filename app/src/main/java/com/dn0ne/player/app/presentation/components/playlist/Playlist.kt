@@ -2,9 +2,11 @@ package com.dn0ne.player.app.presentation.components.playlist
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -73,7 +75,8 @@ fun Playlist(
     trackSortOrder: SortOrder,
     onTrackSortChange: (TrackSort?, SortOrder?) -> Unit,
     onBackClick: () -> Unit,
-    replaceSearchWithFilter: Boolean
+    replaceSearchWithFilter: Boolean,
+    showTrackCount: Boolean = false
 ) {
     val context = LocalContext.current
 
@@ -113,25 +116,38 @@ fun Playlist(
     LazyColumnWithCollapsibleTopBar(
         listState = listState,
         topBarContent = {
-            Text(
-                text = playlist.name
-                    ?: context.resources.getString(R.string.unknown),
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontSize = lerp(
-                        start = MaterialTheme.typography.titleLarge.fontSize,
-                        stop = MaterialTheme.typography.headlineLarge.fontSize,
-                        fraction = collapseFraction
-                    ),
-                ),
-                softWrap = collapseFraction > .2f,
-                overflow = if (collapseFraction > .2f) {
-                    TextOverflow.Clip
-                } else TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center,
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .align(Alignment.Center)
                     .padding(horizontal = if (collapseFraction > .2f) 28.dp else 108.dp)
-            )
+            ) {
+                Text(
+                    text = playlist.name
+                        ?: context.resources.getString(R.string.unknown),
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontSize = lerp(
+                            start = MaterialTheme.typography.titleLarge.fontSize,
+                            stop = MaterialTheme.typography.headlineLarge.fontSize,
+                            fraction = collapseFraction
+                        ),
+                    ),
+                    softWrap = collapseFraction > .2f,
+                    overflow = if (collapseFraction > .2f) {
+                        TextOverflow.Clip
+                    } else TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center
+                )
+
+                if (showTrackCount && collapseFraction <= .2f) {
+                    Text(
+                        text = context.resources.getString(R.string.x_tracks, playlist.trackList.size),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
 
             AnimatedContent(
                 targetState = topBarContent,
@@ -158,16 +174,18 @@ fun Playlist(
                                     )
                                 }
 
-                                TrackSortButton(
-                                    sort = trackSort,
-                                    order = trackSortOrder,
-                                    onSortChange = {
-                                        onTrackSortChange(it, null)
-                                    },
-                                    onSortOrderChange = {
-                                        onTrackSortChange(null, it)
-                                    }
-                                )
+                                AnimatedVisibility(visible = !showTrackCount) {
+                                    TrackSortButton(
+                                        sort = trackSort,
+                                        order = trackSortOrder,
+                                        onSortChange = {
+                                            onTrackSortChange(it, null)
+                                        },
+                                        onSortOrderChange = {
+                                            onTrackSortChange(null, it)
+                                        }
+                                    )
+                                }
                             }
 
                             IconButton(
