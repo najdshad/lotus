@@ -134,3 +134,7 @@ Android music player (Lotus) built with Jetpack Compose, following clean archite
 - Use `copy()` on data classes to update immutable state
 - Use Channel for one-shot events between ViewModels and UI
 - Use `receiveAsFlow()` on Channels to collect as Flow in coroutines
+
+## User notes
+
+this app currently hasn't been released. there is no need to take migration from previous versions into consideration.
