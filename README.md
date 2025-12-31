@@ -1,9 +1,9 @@
 <div align="center">
   <img src="assets/icon/icon-fit.png" width="200px" />
 
-  # Lotus
+# Lotus
 
-  ### Music player for Android
+### Music player for Android
   
 </div>
 
@@ -36,8 +36,9 @@
 ./gradlew assembleDebug           # Build debug APK
 ./gradlew assembleRelease         # Build release APK
 ./gradlew clean                   # Clean build artifacts
-adb install app/build/outputs/apk/debug/app-debug.apk    # Install debug APK
-adb install app/build/outputs/apk/release/app-release.apk  # Install release APK
+adb install app/build/outputs/apk/debug/lotus-1.4.0-arm64-v8a-release.apk    # Install debug APK
+adb install app/build/outputs/apk/release/lotus-1.4.0-arm64-v8a-debug.apk  # Install release APK
+
 ```
 
 ## Credits
